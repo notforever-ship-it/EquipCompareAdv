@@ -3,7 +3,7 @@
 local ECA = EquipCompareAdv
 
 local GOLD, GREY, WHITE, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|r"
-local WIDTH, HEIGHT = 380, 500
+local WIDTH, HEIGHT = 380, 526
 
 local frame, scoringText, scoreText, detailButton, capsButton
 local specButtons, checks = {}, {}
@@ -15,6 +15,8 @@ local NUM_ROWS, ROW_HEIGHT = 12, 24
 local CHECKS = {
   { key = "enabled", label = "Compare items when I hover them",
     tip = "The panel next to item tooltips. Turn it off to keep the addon quiet without disabling it." },
+  { key = "showEquipped", label = "Show the tooltip of what I have equipped",
+    tip = "The equipped item's own tooltip sits between the item you hover and the comparison panel, like the game's compare tooltips. Rings, trinkets and weapons can show two." },
   { key = "shiftOnly", label = "Only while I hold Shift",
     tip = "Keeps tooltips clean until you ask for the comparison by holding Shift." },
   { key = "showPoints", label = "Show score points next to each stat",

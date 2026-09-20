@@ -203,10 +203,23 @@ function ECA.SpecLabel()
   return label
 end
 
+local PERCENT_STATS = { "CRIT", "HIT", "HASTE", "SPELLCRIT", "SPELLHIT", "DODGE", "PARRY", "BLOCK" }
+
 -- A spec's weights with the player's own changes on top.
 local function BuildWeights(class, spec, custom, level)
   local w = {}
   for k, v in pairs(spec.w) do w[k] = v end
+  -- 1% of a level 20's damage is a much smaller number than 1% of a level 60's, so the percent stats
+  -- shrink with level. It also keeps Agility honest: a point gives more crit at low level, but each
+  -- percent is worth less, and the two cancel out.
+  if level < 60 then
+    local f = level / 60
+    if f < 0.2 then f = 0.2 end
+    for i = 1, table.getn(PERCENT_STATS) do
+      local k = PERCENT_STATS[i]
+      if w[k] then w[k] = w[k] * f end
+    end
+  end
   -- A wand is most of a leveling caster's damage and none of a level 60's.
   if spec.wand and level < 60 then w.RDPS = 4 * (1 - level / 60) end
   if custom then
@@ -402,6 +415,10 @@ local NORM_STATS = { "STR", "AGI", "STA", "INT", "SPI", "AP", "RAP", "CRIT", "HI
   "DODGE", "PARRY", "BLOCKVALUE", "DEFENSE", "SP", "HEAL", "SHADOWDMG", "FIREDMG", "FROSTDMG", "ARCANEDMG",
   "NATUREDMG", "MP5" }
 
+-- Stats that mark an item as tank gear (with Stamina, which is counted apart).
+local TANK_STATS = { DEFENSE = true, DODGE = true, PARRY = true, BLOCK = true, BLOCKVALUE = true, HEALTH = true,
+  HP5 = true, FIRERES = true, NATURERES = true, FROSTRES = true, SHADOWRES = true, ARCANERES = true }
+
 local ARMOR_RANK = { Cloth = 1, Leather = 2, Mail = 3, Plate = 4 }
 local CLASS_ARMOR = { WARRIOR = 4, PALADIN = 4, HUNTER = 3, SHAMAN = 3, ROGUE = 2, DRUID = 2, PRIEST = 1, MAGE = 1, WARLOCK = 1 }
 local SHIELD_CLASSES = { WARRIOR = true, PALADIN = true, SHAMAN = true }
@@ -462,12 +479,13 @@ function ECA.Fits(item)
   if item.fits ~= nil then return item.fits or nil end
   item.fits = false
   local stats = item.stats
-  local budget, stamina = 0, 0
+  local budget, stamina, tankBudget = 0, 0, 0
   for k, v in pairs(stats) do
     if k == "STA" then
       stamina = math.abs(v)
     elseif BUDGET[k] then
       budget = budget + math.abs(v) * BUDGET[k]
+      if TANK_STATS[k] then tankBudget = tankBudget + math.abs(v) * BUDGET[k] end
     end
   end
   if budget + stamina < 3 then return nil end
@@ -492,6 +510,9 @@ function ECA.Fits(item)
         if tank then cost = cost + stamina end
         local raw = 0
         if suits and cost > 0 then raw = value / (cost * profile.norm) end
+        -- A tank can use Agility or Strength, but gear is only made for tanks when it carries tank
+        -- stats: stamina, defense, dodge, parry, block.
+        if tank and cost > 0 then raw = raw * (0.55 + 0.45 * (tankBudget + stamina) / cost) end
         -- Classes mostly want their own armor type: plate wearers skip leather unless it is special.
         if mainArmor and mainArmor < CLASS_ARMOR[class] then raw = raw * 0.88 end
         local fit = raw

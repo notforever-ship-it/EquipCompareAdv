@@ -2,7 +2,7 @@
 
 Gear comparison for Turtle WoW, Octo WoW, Ravencraft and other 1.12.1 servers. Hover any item you could equip and a panel next to the tooltip tells you:
 
-- **What you have equipped** in that slot, by name, with its score.
+- **What you have equipped** in that slot: its full tooltip right next to the one you're hovering, like the game's own compare tooltips, plus its score.
 - **Every stat you'd gain and lose**, green and red, with how many score points each one is worth.
 - **A score for both items**, worked out for your class and spec.
 - **A verdict**: big upgrade, upgrade, sidegrade, downgrade or big downgrade, and whether equipping it is recommended.
@@ -59,6 +59,7 @@ Best for:                     Warrior Arms 100%
 Fit for your spec:                         100%
 ```
 
+- The **equipped item's tooltip** sits between the item you hover and the panel, under a "Currently Equipped" tab. Rings, trinkets and weapons can show two. On the auction house the game already shows its own, so the addon leaves those alone and puts the panel underneath.
 - **Rings, trinkets and one-handed weapons** are compared with both slots, and the panel says which one to swap.
 - **Two-handers** are compared with your main hand and off hand together. An off-hand weapon's damage counts half, as it does in game.
 - **Hovering something you're wearing** shows its score and your total gear score instead.
@@ -93,7 +94,7 @@ Every spec has a weight for the stats that do the work: attack power, crit, hit,
 - Intellect is 15 mana and spell crit (about 60 Intellect for 1%).
 - Spirit is mana regeneration, counted for the share of a fight it really works in.
 
-The conversions scale with your level, so crit from Agility is worth more on a level 30 than on a level 60.
+Below level 60 the percent stats (crit, hit, dodge and so on) are worth less, because 1% of a level 20's damage is a much smaller number than 1% of a level 60's. A point of Agility gives more crit at low level, and the two cancel out, so Agility stays worth about the same all the way up. Numbers you type into the Stat weights window are used exactly as typed.
 
 Melee and hunter scores count in attack power, caster scores in spell damage, healer scores in healing and tank scores in stamina. A score only means something next to another score for the same spec.
 
@@ -109,14 +110,14 @@ Melee and hunter scores count in attack power, caster scores in spell damage, he
 
 ### "Made for"
 
-The addon looks at how an item's stat budget is spent and checks it against every spec of every class that can equip it (armor type, weapon skills, class restrictions). The spec that wastes the least of the budget is who the item is made for. Stamina is on nearly everything, so it only counts towards tanks.
+The addon looks at how an item's stat budget is spent and checks it against every spec of every class that can equip it (armor type, weapon skills, class restrictions). The spec that wastes the least of the budget is who the item is made for. Stamina is on nearly everything, so it only counts towards tanks. A tank can use Agility or Strength too, but an item only reads as tank gear when it carries tank stats: stamina, defense, dodge, parry, block.
 
 ## Options
 
 `/eca` opens the options window:
 
 - **Score items for**: Auto, or any spec of your class.
-- Switches for the comparison, Shift-only mode, score points, the "made for" lines, the character window score and ignoring enchants.
+- Switches for the comparison, the equipped item's tooltip, Shift-only mode, score points, the "made for" lines, the character window score and ignoring enchants.
 - **Detail** and **Hit caps** buttons.
 - **Stat weights**: a window listing what every stat is worth to your spec. Type a new number and press Enter to change it; changed stats turn gold. Strength and the other primary stats show what they're worth on the right, and a number typed there is added on top. Your changes are saved per character and per spec. You can also tell the addon about hit you get from somewhere it can't see.
 - **List my gear**: everything you have equipped, with scores, in chat.
@@ -129,6 +130,7 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca on` · `/eca off` | Switch the comparison on or off |
 | `/eca spec auto` · `/eca spec fury` | What to score for |
 | `/eca detail 1` · `2` · `3` | Compact, normal or detailed |
+| `/eca equipped` | Show or hide the equipped item's tooltip |
 | `/eca shift` | Only show while Shift is held |
 | `/eca caps auto` · `raid` · `leveling` · `off` | How hit caps are judged |
 | `/eca enchants` | Count or ignore enchants |
@@ -137,6 +139,15 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca weight CRIT 30` | Change one weight; `/eca weight reset` puts them back |
 | `/eca hit 3` · `/eca spellhit 2` | Extra hit % from buffs or talents the addon can't see |
 | `/eca help` | List the commands in game |
+
+## Changes
+
+**1.1.0**
+
+- The equipped item's full tooltip now shows next to the item you hover, like the game's own compare tooltips, with the comparison panel after it. Switch it off in `/eca` or with `/eca equipped`.
+- The panel and the equipped tooltips have a darker background, so they stay readable over your bags.
+- Fairer scores while leveling: crit, hit and the other percent stats are worth less below level 60, and Agility no longer gets inflated at low level.
+- "Made for" no longer calls plain Agility or Strength items tank gear.
 
 ## Good to know
 

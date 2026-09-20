@@ -36,6 +36,7 @@ function ECA.Equipped(slot)
       item = ECA.ParseTooltip("EquipCompareAdvScanTooltip", tip:NumLines(), false)
     end
     if item then
+      item.slot = slot
       item.link = GetInventoryItemLink("player", slot)
       -- The tooltip can't tell a ranged slot from any other; the slot number can.
       if slot == 18 and item.stats.DPS then item.stats.RDPS, item.stats.DPS = item.stats.DPS, nil end
@@ -190,11 +191,14 @@ local function Build(item, slot, label, equipped, removedA, removedB, note)
   local other = OtherGear(removedA, removedB)
   local newStats, oldStats = ECA.ItemStats(item), ECA.ItemStats(equipped)
   local comp = {
-    slot = slot, label = label, equipped = equipped, note = note,
+    slot = slot, label = label, equipped = equipped, note = note, slots = {},
     newScore = ECA.Score(newStats, other, dpsScale),
     oldScore = ECA.Score(oldStats, other, dpsScale),
     changes = {},
   }
+  -- the inventory slots that would be emptied, for showing their tooltips
+  if removedA and not removedA.empty then table.insert(comp.slots, removedA.slot) end
+  if removedB and not removedB.empty then table.insert(comp.slots, removedB.slot) end
   comp.diff = comp.newScore - comp.oldScore
   if comp.oldScore > 0.5 then comp.pct = comp.diff / comp.oldScore * 100 end
 

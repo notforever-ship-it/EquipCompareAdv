@@ -1,4 +1,5 @@
--- Equip Compare Adv: the comparison panel that sits next to an item tooltip.
+-- Equip Compare Adv: the comparison panel that sits next to an item tooltip, with the tooltip of what
+-- you're wearing in between, like the game's own compare tooltips.
 -- The panel follows GameTooltip (bags, loot, vendors, quests, the auction house...) and ItemRefTooltip
 -- (links clicked in chat). The game's own tooltips are never changed, so other tooltip addons keep working.
 
@@ -15,38 +16,114 @@ local SET_METHODS = { "SetBagItem", "SetInventoryItem", "SetLootItem", "SetLootR
   "SetSendMailItem", "SetHyperlink" }
 
 ------------------------------------------------------------------------------------------------------
--- The panel frame
+-- The frames: the panel, and the tooltips of what you're wearing
 ------------------------------------------------------------------------------------------------------
 
+-- Tooltip art is see-through, which makes small text hard to read over bags; a dark layer fixes that.
+local function Darken(tip)
+  local solid = tip:CreateTexture(nil, "BACKGROUND")
+  solid:SetTexture(0, 0, 0, 0.75)
+  solid:SetPoint("TOPLEFT", tip, "TOPLEFT", 4, -4)
+  solid:SetPoint("BOTTOMRIGHT", tip, "BOTTOMRIGHT", -4, 4)
+end
+
+local function NewTip(name)
+  local tip = CreateFrame("GameTooltip", name, UIParent, "GameTooltipTemplate")
+  tip:SetFrameStrata("TOOLTIP")
+  if tip.SetClampedToScreen then tip:SetClampedToScreen(true) end
+  Darken(tip)
+  return tip
+end
+
 local function GetPanel(state)
-  if not state.panel then
-    local panel = CreateFrame("GameTooltip", "EquipCompareAdvPanel" .. state.index, UIParent, "GameTooltipTemplate")
-    panel:SetFrameStrata("TOOLTIP")
-    if panel.SetClampedToScreen then panel:SetClampedToScreen(true) end
-    state.panel = panel
-  end
+  if not state.panel then state.panel = NewTip("EquipCompareAdvPanel" .. state.index) end
   return state.panel
+end
+
+-- Up to two tooltips of equipped items (both rings, main hand and off hand), like the game's own compare.
+local function GetEquippedTip(state, n)
+  if not state.equippedTips then state.equippedTips = {} end
+  if not state.equippedTips[n] then
+    local tip = NewTip("EquipCompareAdvEquipped" .. state.index .. "_" .. n)
+    -- A "Currently Equipped" tab on top. The tooltip itself stays exactly as the game filled it in.
+    local tab = CreateFrame("Frame", nil, tip)
+    tab:SetHeight(22)
+    tab:SetWidth(140)
+    tab:SetPoint("BOTTOMLEFT", tip, "TOPLEFT", 0, -3)
+    tab:SetBackdrop({
+      bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+      edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+      tile = true, tileSize = 16, edgeSize = 12,
+      insets = { left = 3, right = 3, top = 3, bottom = 3 },
+    })
+    tab:SetBackdropColor(0, 0, 0, 0.95)
+    tab:SetBackdropBorderColor(0.6, 0.6, 0.6, 1)
+    tip.tabText = tab:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    tip.tabText:SetPoint("CENTER", tab, "CENTER", 0, 0)
+    tip.tabText:SetTextColor(0.6, 0.6, 0.6)
+    tip.tab = tab
+    state.equippedTips[n] = tip
+  end
+  return state.equippedTips[n]
+end
+
+local function HideEquippedTips(state, from)
+  if not state.equippedTips then return end
+  for n = from or 1, table.getn(state.equippedTips) do state.equippedTips[n]:Hide() end
 end
 
 local function HidePanel(state)
   if state.panel then state.panel:Hide() end
+  HideEquippedTips(state)
 end
 
--- Beside the tooltip, on whichever side has room; growing upwards when the tooltip sits low on screen.
--- When the game's own compare tooltips are up (the auction house), they own the sides, so the panel
--- goes underneath instead, or on top when there's no room below.
+-- Fill the equipped-item tooltips for these inventory slots. The game's compare tooltips already do
+-- this on the auction house, so there they are left alone.
+local function ShowEquippedTips(state, slots)
+  local shown = 0
+  if ECA.db.showEquipped and not (ShoppingTooltip1 and ShoppingTooltip1:IsVisible()) then
+    for i = 1, table.getn(slots) do
+      if shown < 2 then
+        local tip = GetEquippedTip(state, shown + 1)
+        tip:SetOwner(UIParent, "ANCHOR_NONE")
+        tip:SetScale(state.tooltip:GetScale() or 1)
+        if tip:SetInventoryItem("player", slots[i]) then
+          tip.tabText:SetText("Currently Equipped - " .. (ECA.SLOT_LABEL[slots[i]] or ""))
+          tip.tab:SetWidth((tip.tabText:GetStringWidth() or 130) + 18)
+          tip:Show()
+          shown = shown + 1
+        else
+          tip:Hide()
+        end
+      end
+    end
+  end
+  HideEquippedTips(state, shown + 1)
+  state.layout = nil
+end
+
+local function Width(frame)
+  return (frame:GetWidth() or 0) * (frame:GetScale() or 1)
+end
+
+-- Tooltip, then what you're wearing, then the panel, in a row on whichever side has room. If the row is
+-- too long for one side the panel takes the other. Everything lines up along the top, or along the
+-- bottom when the tooltip sits low on screen.
+-- When the game's own compare tooltips are up (the auction house) they own the sides, so the panel goes
+-- underneath, or on top when there's no room below.
 local function Anchor(state, force)
   local panel, tooltip = state.panel, state.tooltip
   if not panel or not panel:IsShown() then return end
-  local side, vert = "LEFT", "TOP"
+
   if ShoppingTooltip1 and ShoppingTooltip1:IsVisible() then
+    HideEquippedTips(state)
     local bottom = tooltip:GetBottom()
-    side = "UNDER"
-    if bottom and bottom * (tooltip:GetScale() or 1) < (panel:GetHeight() or 0) * (panel:GetScale() or 1) then side = "OVER" end
-    if force or panel.side ~= side then
-      panel.side, panel.vert = side, nil
+    local layout = "UNDER"
+    if bottom and bottom * (tooltip:GetScale() or 1) < (panel:GetHeight() or 0) * (panel:GetScale() or 1) then layout = "OVER" end
+    if force or state.layout ~= layout then
+      state.layout = layout
       panel:ClearAllPoints()
-      if side == "UNDER" then
+      if layout == "UNDER" then
         panel:SetPoint("TOPLEFT", tooltip, "BOTTOMLEFT", 0, 0)
       else
         panel:SetPoint("BOTTOMLEFT", tooltip, "TOPLEFT", 0, 0)
@@ -54,25 +131,59 @@ local function Anchor(state, force)
     end
     return
   end
+
+  local tips = {}
+  if state.equippedTips then
+    for n = 1, table.getn(state.equippedTips) do
+      if state.equippedTips[n]:IsShown() then table.insert(tips, state.equippedTips[n]) end
+    end
+  end
+
+  local side, panelSide, vert = "LEFT", "LEFT", "TOP"
   local left, right, top = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop()
   if left and right and top then
     local scale = tooltip:GetScale() or 1
     local screenW, screenH = UIParent:GetWidth(), UIParent:GetHeight()
-    local width = (panel:GetWidth() or 0) * (panel:GetScale() or 1)
-    local roomRight = screenW - right * scale
-    local roomLeft = left * scale
-    if roomRight >= width or roomRight > roomLeft then side = "RIGHT" end
+    local roomRight, roomLeft = screenW - right * scale, left * scale
+    local tipsWidth, panelWidth = 0, Width(panel)
+    for n = 1, table.getn(tips) do tipsWidth = tipsWidth + Width(tips[n]) end
+
+    local room = { RIGHT = roomRight, LEFT = roomLeft }
+    local big, small = "LEFT", "RIGHT"
+    if roomRight >= roomLeft then big, small = "RIGHT", "LEFT" end
+    -- the right is where the game puts things, so it wins whenever the whole row fits there
+    if roomRight >= tipsWidth + panelWidth then
+      side, panelSide = "RIGHT", "RIGHT"
+    elseif room[big] >= tipsWidth + panelWidth then
+      side, panelSide = big, big
+    elseif room[big] >= tipsWidth and room[small] >= panelWidth then
+      side, panelSide = big, small
+    elseif room[small] >= tipsWidth and room[big] >= panelWidth then
+      side, panelSide = small, big
+    else
+      side, panelSide = big, big
+    end
     if top * scale < screenH * 0.45 then vert = "BOTTOM" end
   end
-  if force or panel.side ~= side or panel.vert ~= vert then
-    panel.side, panel.vert = side, vert
-    panel:ClearAllPoints()
-    if side == "RIGHT" then
-      panel:SetPoint(vert .. "LEFT", tooltip, vert .. "RIGHT", 0, 0)
+
+  local layout = side .. panelSide .. vert .. table.getn(tips)
+  if not force and state.layout == layout then return end
+  state.layout = layout
+
+  local function Beside(frame, anchor, where)
+    frame:ClearAllPoints()
+    if where == "RIGHT" then
+      frame:SetPoint(vert .. "LEFT", anchor, vert .. "RIGHT", 0, 0)
     else
-      panel:SetPoint(vert .. "RIGHT", tooltip, vert .. "LEFT", 0, 0)
+      frame:SetPoint(vert .. "RIGHT", anchor, vert .. "LEFT", 0, 0)
     end
   end
+  local last = tooltip
+  for n = 1, table.getn(tips) do
+    Beside(tips[n], last, side)
+    last = tips[n]
+  end
+  if panelSide == side then Beside(panel, last, side) else Beside(panel, tooltip, panelSide) end
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -266,6 +377,7 @@ local function Render(state, item)
   panel:ClearLines()
   panel:AddDoubleLine("Equip Compare Adv", ECA.Spec().name, 1, 0.82, 0, 0.62, 0.62, 0.62)
 
+  local equippedSlots = {}
   if state.equippedSlot then
     -- hovering something you're wearing
     local slot = state.equippedSlot
@@ -283,6 +395,7 @@ local function Render(state, item)
     local comps = ECA.Compare(item)
     for i = 1, table.getn(comps) do
       AddComparison(panel, item, comps[i], detail)
+      for j = 1, table.getn(comps[i].slots) do table.insert(equippedSlots, comps[i].slots[j]) end
     end
     if detail >= 3 and table.getn(comps) > 0 then
       -- the swap against everything you're wearing
@@ -331,6 +444,7 @@ local function Render(state, item)
   end
 
   panel:Show()
+  ShowEquippedTips(state, equippedSlots)
   Anchor(state, true)
 end
 

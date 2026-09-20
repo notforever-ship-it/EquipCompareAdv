@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.0.0"
+ECA.VERSION = "1.1.0"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -11,6 +11,7 @@ local DEFAULTS = {
   enabled = true,
   shiftOnly = false,       -- only show the comparison while Shift is held
   detail = 2,              -- 1 compact, 2 normal, 3 detailed (holding Alt always shows detailed)
+  showEquipped = true,     -- the tooltip of the equipped item, next to the hovered one
   showPoints = true,       -- score points next to each stat change
   showFit = true,          -- the "made for" line: role and classes the item suits
   showCharScore = true,    -- total gear score on the character window
@@ -144,6 +145,7 @@ local function Help()
     "/eca on | off" .. GREY .. "  switch the comparison on or off" .. END,
     "/eca spec auto | <name>" .. GREY .. "  what to score for (auto follows your talents)" .. END,
     "/eca detail 1 | 2 | 3" .. GREY .. "  compact, normal or detailed (hold Alt for detailed any time)" .. END,
+    "/eca equipped" .. GREY .. "  show or hide the tooltip of the item you have equipped" .. END,
     "/eca shift" .. GREY .. "  only show while Shift is held" .. END,
     "/eca caps auto | raid | leveling | off" .. GREY .. "  how hit caps are judged" .. END,
     "/eca enchants" .. GREY .. "  count or ignore enchants" .. END,
@@ -181,6 +183,10 @@ local function Slash(msg)
     ECA.db.shiftOnly = not ECA.db.shiftOnly
     ECA.SettingsChanged()
     ECA.Print(ECA.db.shiftOnly and "Shown only while Shift is held." or "Shown on every hover.")
+  elseif cmd == "equipped" then
+    ECA.db.showEquipped = not ECA.db.showEquipped
+    ECA.SettingsChanged()
+    ECA.Print(ECA.db.showEquipped and "The equipped item's tooltip is shown next to the one you hover." or "The equipped item's tooltip is hidden.")
   elseif cmd == "caps" then
     rest = string.lower(rest or "")
     if ECA.CAP_NAMES[rest] then
