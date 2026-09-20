@@ -329,7 +329,7 @@ local function AddComparison(panel, item, comp, detail)
   -- verdict
   local v = comp.verdict
   local numbers = ""
-  if v ~= nil and v.text ~= "SAME STATS" then
+  if v ~= nil and v.text ~= "SAME STATS" and v.text ~= "NOTHING FOR YOUR SPEC" then
     numbers = "  " .. ECA.Signed(comp.diff)
     if comp.pct and math.abs(comp.pct) < 1000 then numbers = numbers .. " (" .. ECA.Signed(comp.pct) .. "%)" end
   end
@@ -375,7 +375,7 @@ local function Render(state, item)
   panel:SetOwner(UIParent, "ANCHOR_NONE")
   panel:SetScale(tooltip:GetScale() or 1)
   panel:ClearLines()
-  panel:AddDoubleLine("Equip Compare Adv", ECA.Spec().name, 1, 0.82, 0, 0.62, 0.62, 0.62)
+  panel:AddDoubleLine("Equip Compare Adv", ECA.SpecShort(), 1, 0.82, 0, 0.62, 0.62, 0.62)
 
   local equippedSlots = {}
   if state.equippedSlot then

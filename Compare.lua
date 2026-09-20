@@ -135,10 +135,12 @@ local VERDICTS = {
   down = { text = "DOWNGRADE", advice = "Not recommended: keep what you have.", r = 1, g = 0.5, b = 0.2 },
   bigdown = { text = "BIG DOWNGRADE", advice = "Not recommended: keep what you have.", r = 1, g = 0.25, b = 0.25 },
   same = { text = "SAME STATS", advice = "Identical to what you're wearing.", r = 0.8, g = 0.8, b = 0.8 },
+  none = { text = "NOTHING FOR YOUR SPEC", advice = "None of these stats count for the spec being scored. Go by the Overall lines, or score for another spec in /eca.", r = 0.8, g = 0.8, b = 0.8 },
 }
 
-local function Verdict(newScore, oldScore, empty, identical)
+local function Verdict(newScore, oldScore, empty, identical, changed)
   if identical then return VERDICTS.same end
+  if changed and math.abs(newScore) < 0.05 and math.abs(oldScore) < 0.05 then return VERDICTS.none end
   local diff = newScore - oldScore
   if empty then
     if diff > 0.5 then return VERDICTS.bigup end
@@ -273,7 +275,7 @@ local function Overall(newStats, oldStats, other, slot)
   local weapon = 0
   if ranged then
     weapon = diff.RDPS or 0
-  elseif (ECA.Weights().DPS or 0) > 0 then
+  elseif not ECA.Spec().feral then
     weapon = diff.DPS or 0
     if slot == 17 then weapon = weapon * 0.5 end
   end
@@ -344,7 +346,7 @@ local function Build(item, slot, label, equipped, removedA, removedB, note)
   end
 
   local identical = (not equipped.empty) and equipped.name == item.name and SameStats(newStats, oldStats)
-  comp.verdict = Verdict(comp.newScore, comp.oldScore, equipped.empty, identical)
+  comp.verdict = Verdict(comp.newScore, comp.oldScore, equipped.empty, identical, table.getn(comp.changes) > 0)
   comp.other = other
   comp.overall = Overall(newStats, oldStats, other, slot)
   return comp
@@ -473,7 +475,7 @@ function ECA.UpdateCharText()
   end
   if not CharacterModelFrame:IsVisible() then return end
   local ok = ECA.Safe(function()
-    charText:SetText("Gear score " .. ECA.Num(ECA.TotalScore()) .. "  |cff9d9d9d" .. ECA.Spec().name .. "|r")
+    charText:SetText("Gear score " .. ECA.Num(ECA.TotalScore()) .. "  |cff9d9d9d" .. ECA.SpecShort() .. "|r")
   end)
   if not ok then charText:SetText("") end
 end

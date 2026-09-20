@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.2.0"
+ECA.VERSION = "1.2.1"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -16,6 +16,7 @@ local DEFAULTS = {
   showFit = true,          -- the "made for" line: role and classes the item suits
   showCharScore = true,    -- total gear score on the character window
   ignoreEnchants = false,  -- compare bare items, leaving enchants out
+  levelingMix = true,      -- below 60, healers and tanks also count their class's damage stats
   capMode = "auto",        -- hit caps: auto / raid / leveling / off
 }
 
@@ -148,6 +149,7 @@ local function Help()
     "/eca equipped" .. GREY .. "  show or hide the tooltip of the item you have equipped" .. END,
     "/eca shift" .. GREY .. "  only show while Shift is held" .. END,
     "/eca caps auto | raid | leveling | off" .. GREY .. "  how hit caps are judged" .. END,
+    "/eca leveling" .. GREY .. "  below 60, healers and tanks also count damage stats (on by default)" .. END,
     "/eca enchants" .. GREY .. "  count or ignore enchants" .. END,
     "/eca gear" .. GREY .. "  list what you have equipped, with scores" .. END,
     "/eca weights" .. GREY .. "  list the stat weights;  " .. END .. "/eca weight <STAT> <n>" .. GREY .. "  change one;  " .. END .. "/eca weight reset",
@@ -196,6 +198,11 @@ local function Slash(msg)
     else
       ECA.Print("Use /eca caps auto, raid, leveling or off.")
     end
+  elseif cmd == "leveling" then
+    ECA.db.levelingMix = not ECA.db.levelingMix
+    ECA.SettingsChanged()
+    ECA.Print(ECA.db.levelingMix and "Below level 60, healers and tanks also count their class's damage stats." or
+      "Healers and tanks are scored purely for healing and tanking at every level.")
   elseif cmd == "enchants" then
     ECA.db.ignoreEnchants = not ECA.db.ignoreEnchants
     ECA.SettingsChanged()

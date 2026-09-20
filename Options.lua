@@ -3,7 +3,7 @@
 local ECA = EquipCompareAdv
 
 local GOLD, GREY, WHITE, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|r"
-local WIDTH, HEIGHT = 380, 526
+local WIDTH, HEIGHT = 380, 552
 
 local frame, scoringText, scoreText, detailButton, capsButton
 local specButtons, checks = {}, {}
@@ -25,6 +25,8 @@ local CHECKS = {
     tip = "Tank, DPS or healer, the classes and specs that get the most out of the item's stats, and how well it fits your own spec." },
   { key = "showCharScore", label = "Show my gear score on the character window",
     tip = "The total score of everything you're wearing, under your character model." },
+  { key = "levelingMix", label = "While leveling, healers and tanks count damage too",
+    tip = "A level 11 healer still has to kill things. Below level 60, healing and tanking specs get their class's damage spec mixed into the score: nearly all of it at level 10, fading to none at 60. The panel header shows '+ leveling' while it applies." },
   { key = "ignoreEnchants", label = "Ignore enchants (compare bare items)",
     tip = "Off: you see what really changes the moment you swap, including the enchant you'd lose.\n\nOn: both items are judged without enchants, which is fairer when you plan to enchant the new one too." },
 }

@@ -200,6 +200,8 @@ function ECA.SpecLabel()
   local label = spec.name
   if label ~= ECA.CLASS_NAMES[ECA.class] then label = ECA.CLASS_NAMES[ECA.class] .. " - " .. label end
   if auto then label = label .. " (auto)" end
+  local other = ECA.LevelingMix()
+  if other then label = label .. " + " .. other.name .. " while leveling" end
   return label
 end
 
@@ -265,9 +267,41 @@ function ECA.DefaultWeights()
   return BuildWeights(ECA.class, ECA.Spec(), nil, Level())
 end
 
+-- Healers and tanks still have to kill things on the way to 60, so until then their class's damage
+-- spec is mixed into the score: almost all of it at level 10, none of it at 60.
+local LEVELING_SPEC = { WARRIOR = "arms", PALADIN = "ret", PRIEST = "shadow", SHAMAN = "enh", DRUID = "cat" }
+
+-- The damage spec being mixed in, and its share of the score (0..1). nil when nothing is mixed in.
+function ECA.LevelingMix()
+  local spec, level = ECA.Spec(), Level()
+  if not ECA.db.levelingMix or level >= 60 then return nil, 0 end
+  if spec.role ~= "tank" and spec.role ~= "healer" then return nil, 0 end
+  local other = FindSpec(ECA.class, LEVELING_SPEC[ECA.class] or "")
+  if not other or other == spec then return nil, 0 end
+  return other, 1 - level / 60
+end
+
+-- The spec's name for the panel header: "Holy", or "Holy + leveling" while damage is mixed in.
+function ECA.SpecShort()
+  local name = ECA.Spec().name
+  if ECA.LevelingMix() then name = name .. " + leveling" end
+  return name
+end
+
 function ECA.Units()
   if not cache.units then
-    cache.units = BuildUnits(ECA.class, ECA.Spec(), ECA.Weights(), Level())
+    local level = Level()
+    local units = BuildUnits(ECA.class, ECA.Spec(), ECA.Weights(), level)
+    local other, share = ECA.LevelingMix()
+    if other then
+      local otherUnits = BuildUnits(ECA.class, other,
+        BuildWeights(ECA.class, other, ECA.char.custom[other.key], level), level)
+      local mixed = {}
+      for k, v in pairs(units) do mixed[k] = v * (1 - share) end
+      for k, v in pairs(otherUnits) do mixed[k] = (mixed[k] or 0) + v * share end
+      units = mixed
+    end
+    cache.units = units
   end
   return cache.units
 end

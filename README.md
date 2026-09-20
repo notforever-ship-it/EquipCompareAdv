@@ -85,6 +85,7 @@ Fit for your spec:                         100%
 | SIDEGRADE | Within 3%. Pick the stats you like more. |
 | DOWNGRADE / BIG DOWNGRADE | Worse. Keep what you have. |
 | BETTER THAN NOTHING | The slot is empty, but the item's stats do little for your spec. |
+| NOTHING FOR YOUR SPEC | Neither item has a stat your spec counts. Go by the Overall lines, or score for another spec. |
 
 ### Detail levels
 
@@ -112,6 +113,8 @@ Melee and hunter scores count in attack power, caster scores in spell damage, he
 **Specs:** Arms, Fury, Protection · Holy, Protection, Retribution · Hunter · Rogue · Holy/Discipline, Shadow · Elemental, Enhancement, Restoration · Arcane, Fire, Frost · Shadow and Fire warlock · Balance, Cat, Bear, Restoration. **Auto** follows your talents: the tree with the most points picks the spec. Feral druids get Cat; pick Bear by hand when you tank.
 
 **Hit caps.** Hit stops helping once you can't miss. The addon adds up the hit on the rest of your gear and the hit talents you've taken (Precision, Surefooted, Nature's Guidance, Elemental Precision, Arcane Focus, Shadow Focus, Suppression), and only counts the part of an item's hit that still does something. Past the cap, hit keeps half its value if you dual wield and none otherwise. Caps are 9% melee and ranged and 16% spell against raid bosses, 5% and 3% against things your own level; **Auto** uses the raid numbers at level 60. Tanks in raid mode also value defense less past 440.
+
+**Leveling healers and tanks** still have to kill things. Below level 60 their class's damage spec (Arms, Retribution, Shadow, Enhancement, Cat) is mixed into the score: nearly all of it at level 10, fading to none at 60. The panel header shows "+ leveling" while it applies. Switch it off in `/eca` or with `/eca leveling`.
 
 **Leveling casters** get a weight for wand damage that fades to nothing by level 60.
 
@@ -144,6 +147,7 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca equipped` | Show or hide the equipped item's tooltip |
 | `/eca shift` | Only show while Shift is held |
 | `/eca caps auto` · `raid` · `leveling` · `off` | How hit caps are judged |
+| `/eca leveling` | Below 60, healers and tanks also count damage stats (on by default) |
 | `/eca enchants` | Count or ignore enchants |
 | `/eca gear` | List your equipped gear with scores |
 | `/eca weights` | List the stat weights |
@@ -152,6 +156,12 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.2.1**
+
+- Fixed the **Damage** line ignoring weapon damage when scoring as a healer.
+- Leveling healers and tanks now get their class's damage spec mixed into the score, fading out by level 60, so a better weapon reads as an upgrade on a level 11 Holy paladin. The header shows "+ leveling".
+- When neither item has anything your spec counts, the verdict says so instead of "sidegrade".
 
 **1.2.0**
 
