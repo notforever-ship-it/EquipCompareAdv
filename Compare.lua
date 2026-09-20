@@ -314,6 +314,42 @@ local function Overall(newStats, oldStats, other, slot)
   return lines
 end
 
+-- The same swap judged purely for each role the class can fill: a paladin sees tanking, healing and
+-- damage. Hit caps are left out here; they matter to the main verdict, not to a second opinion.
+local function RoleVerdicts(item, newStats, oldStats, slot, empty, identical, changed)
+  local roles = ECA.RoleSpecs()
+  if table.getn(roles) < 2 then return {} end
+  local list, best = {}, 0
+  for i = 1, table.getn(roles) do
+    local units = ECA.UnitsFor(roles[i].spec)
+    local function Total(stats)
+      local total = 0
+      for k, v in pairs(stats) do
+        if k == "DPS" and slot == 17 then v = v * 0.5 end
+        total = total + v * (units[k] or 0)
+      end
+      return total
+    end
+    local entry = { label = roles[i].label, spec = roles[i].spec, new = Total(newStats), old = Total(oldStats) }
+    if entry.new > best then best = entry.new end
+    if entry.old > best then best = entry.old end
+    table.insert(list, entry)
+  end
+  for i = 1, table.getn(list) do
+    local entry = list[i]
+    if entry.spec.no2H and item.kind == "TWOHAND" then
+      entry.verdict, entry.text = VERDICTS.bigdown, "no: needs a shield"
+    elseif changed and entry.new < best * 0.2 and entry.old < best * 0.2 then
+      -- worth next to nothing to this role either way: +80% of nearly nothing isn't an upgrade
+      entry.verdict = VERDICTS.none
+    else
+      entry.verdict = Verdict(entry.new, entry.old, empty, identical, changed)
+      if entry.old > 0.5 then entry.pct = (entry.new - entry.old) / entry.old * 100 end
+    end
+  end
+  return list
+end
+
 -- One hovered item against one equipped item (or pair).
 local function Build(item, slot, label, equipped, removedA, removedB, note)
   local dpsScale = DpsScale(slot)
@@ -347,6 +383,7 @@ local function Build(item, slot, label, equipped, removedA, removedB, note)
 
   local identical = (not equipped.empty) and equipped.name == item.name and SameStats(newStats, oldStats)
   comp.verdict = Verdict(comp.newScore, comp.oldScore, equipped.empty, identical, table.getn(comp.changes) > 0)
+  comp.roles = RoleVerdicts(item, newStats, oldStats, slot, equipped.empty, identical, table.getn(comp.changes) > 0)
   comp.other = other
   comp.overall = Overall(newStats, oldStats, other, slot)
   return comp

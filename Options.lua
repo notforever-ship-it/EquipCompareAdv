@@ -3,7 +3,7 @@
 local ECA = EquipCompareAdv
 
 local GOLD, GREY, WHITE, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|r"
-local WIDTH, HEIGHT = 380, 552
+local WIDTH, HEIGHT = 380, 578
 
 local frame, scoringText, scoreText, detailButton, capsButton
 local specButtons, checks = {}, {}
@@ -23,6 +23,8 @@ local CHECKS = {
     tip = "How much each gained or lost stat moves the score, so you can see why the verdict came out that way." },
   { key = "showFit", label = "Show who the item is made for",
     tip = "Tank, DPS or healer, the classes and specs that get the most out of the item's stats, and how well it fits your own spec." },
+  { key = "showRoles", label = "Show a verdict for each role (tank, healer, damage)",
+    tip = "Under the main verdict, the same swap judged purely for tanking, for healing and for damage, whichever of those your class can do. Handy when you tank in one set and quest in another, or your talents don't match how you play." },
   { key = "showCharScore", label = "Show my gear score on the character window",
     tip = "The total score of everything you're wearing, under your character model." },
   { key = "levelingMix", label = "While leveling, healers and tanks count damage too",

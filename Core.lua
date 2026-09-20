@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.2.1"
+ECA.VERSION = "1.3.0"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -14,6 +14,7 @@ local DEFAULTS = {
   showEquipped = true,     -- the tooltip of the equipped item, next to the hovered one
   showPoints = true,       -- score points next to each stat change
   showFit = true,          -- the "made for" line: role and classes the item suits
+  showRoles = true,        -- a verdict for each role the class can fill (tanking, healing, damage)
   showCharScore = true,    -- total gear score on the character window
   ignoreEnchants = false,  -- compare bare items, leaving enchants out
   levelingMix = true,      -- below 60, healers and tanks also count their class's damage stats
@@ -149,6 +150,7 @@ local function Help()
     "/eca equipped" .. GREY .. "  show or hide the tooltip of the item you have equipped" .. END,
     "/eca shift" .. GREY .. "  only show while Shift is held" .. END,
     "/eca caps auto | raid | leveling | off" .. GREY .. "  how hit caps are judged" .. END,
+    "/eca roles" .. GREY .. "  show or hide the verdict for each role your class can fill" .. END,
     "/eca leveling" .. GREY .. "  below 60, healers and tanks also count damage stats (on by default)" .. END,
     "/eca enchants" .. GREY .. "  count or ignore enchants" .. END,
     "/eca gear" .. GREY .. "  list what you have equipped, with scores" .. END,
@@ -198,6 +200,10 @@ local function Slash(msg)
     else
       ECA.Print("Use /eca caps auto, raid, leveling or off.")
     end
+  elseif cmd == "roles" then
+    ECA.db.showRoles = not ECA.db.showRoles
+    ECA.SettingsChanged()
+    ECA.Print(ECA.db.showRoles and "A verdict for each role your class can fill is shown." or "The verdicts by role are hidden.")
   elseif cmd == "leveling" then
     ECA.db.levelingMix = not ECA.db.levelingMix
     ECA.SettingsChanged()

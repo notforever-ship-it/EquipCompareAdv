@@ -7,6 +7,7 @@ Gear comparison for Turtle WoW, Octo WoW, Ravencraft and other 1.12.1 servers. H
 - **Every stat you'd gain and lose**, green and red, with how many score points each one is worth.
 - **A score for both items**, worked out for your class and spec.
 - **A verdict**: big upgrade, upgrade, sidegrade, downgrade or big downgrade, and whether equipping it is recommended.
+- **A verdict for every role your class can fill**: a paladin sees the swap judged for tanking, for healing and for damage.
 - **Who the item is made for**: tank, DPS or healer, the classes and specs that get the most out of it, and how well it fits your own spec.
 
 It also warns you about the things a score can't see: a set bonus you'd break, a Use or proc effect you'd lose, an item you can't equip yet.
@@ -54,6 +55,9 @@ Stat by stat:
   -7 Defense                               -1.4
 >> BIG UPGRADE  +118.6 (+251.8%)
 Recommended: equip it.
+By role:
+  Damage                    BIG UPGRADE  +251.8%
+  Tanking (Protection)       DOWNGRADE  -12.4%
 Biggest gain                    +2% Crit Chance
 Biggest loss                        -43 Stamina
 Careful: your Head is part of Battlegear of Might (3/8 worn)...
@@ -70,6 +74,7 @@ Fit for your spec:                         100%
   - **Damage reduction**: how much less physical damage you'd take, from armor against something your own level (a level 63 boss at 60 in raid mode), dodge, parry and defense. Negative means you'd take more.
   - **Healing power**: the change in bonus healing, and roughly what that is per second of casting.
   - **Health** and **Mana**, from Stamina and Intellect.
+- **By role** gives a second opinion for each role your class can fill: the same swap judged purely as a tank, as a healer and as damage, without the leveling mix. A warrior sees two lines, a paladin three, a druid four; rogues, hunters, mages and warlocks only deal damage, so they get none. Switch it off in `/eca` or with `/eca roles`.
 - The **equipped item's tooltip** sits between the item you hover and the panel, under a "Currently Equipped" tab. Rings, trinkets and weapons can show two. On the auction house the game already shows its own, so the addon leaves those alone and puts the panel underneath.
 - **Rings, trinkets and one-handed weapons** are compared with both slots, and the panel says which one to swap.
 - **Two-handers** are compared with your main hand and off hand together. An off-hand weapon's damage counts half, as it does in game.
@@ -147,6 +152,7 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca equipped` | Show or hide the equipped item's tooltip |
 | `/eca shift` | Only show while Shift is held |
 | `/eca caps auto` · `raid` · `leveling` · `off` | How hit caps are judged |
+| `/eca roles` | Show or hide the verdict for each role |
 | `/eca leveling` | Below 60, healers and tanks also count damage stats (on by default) |
 | `/eca enchants` | Count or ignore enchants |
 | `/eca gear` | List your equipped gear with scores |
@@ -156,6 +162,11 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.3.0**
+
+- New **By role** lines under the verdict: the same swap judged purely for tanking, for healing and for damage, whichever your class can do.
+- Auto spec no longer settles on the first talent tree when the game hasn't handed over your talents yet right after a login or /reload; it looks again until they arrive.
 
 **1.2.1**
 

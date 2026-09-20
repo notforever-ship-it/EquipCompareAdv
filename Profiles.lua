@@ -181,6 +181,36 @@ local function DetectSpec(class)
   return specs[1]
 end
 
+local function TalentPoints()
+  local total = 0
+  if GetNumTalentTabs then
+    for tab = 1, (GetNumTalentTabs() or 0) do
+      local _, _, points = GetTalentTabInfo(tab)
+      total = total + (points or 0)
+    end
+  end
+  return total
+end
+
+-- Right after logging in or a /reload the game can report no talent points at all. A character past
+-- level 10 with none is more likely that than a real blank sheet, so look again every couple of seconds
+-- for a while before believing it.
+local recheck = CreateFrame("Frame")
+recheck:Hide()
+recheck.elapsed, recheck.tries = 0, 0
+recheck:SetScript("OnUpdate", function()
+  this.elapsed = this.elapsed + arg1
+  if this.elapsed < 2 then return end
+  this.elapsed = 0
+  this.tries = this.tries + 1
+  if TalentPoints() > 0 then
+    this:Hide()
+    ECA.SettingsChanged()
+  elseif this.tries >= 15 then
+    this:Hide()
+  end
+end)
+
 -- The spec being scored for, and whether it came from the talents.
 function ECA.Spec()
   if not cache.spec then
@@ -190,6 +220,7 @@ function ECA.Spec()
       cache.spec, cache.specAuto = spec, false
     else
       cache.spec, cache.specAuto = DetectSpec(class), true
+      if Level() >= 10 and recheck.tries < 15 and TalentPoints() == 0 then recheck:Show() end
     end
   end
   return cache.spec, cache.specAuto
@@ -304,6 +335,41 @@ function ECA.Units()
     cache.units = units
   end
   return cache.units
+end
+
+-- One spec for each role this class can fill, for the "by role" verdicts: { spec, label }.
+local ROLE_GOALS = { tank = "Tanking", healer = "Healing", melee = "Damage", ranged = "Damage", caster = "Damage" }
+function ECA.RoleSpecs()
+  if not cache.roleSpecs then
+    local list, seen, damage = {}, {}, 0
+    local specs = ECA.SPECS[ECA.class]
+    for i = 1, table.getn(specs) do
+      local spec = specs[i]
+      if not seen[spec.role] then
+        seen[spec.role] = true
+        if ROLE_GOALS[spec.role] == "Damage" then damage = damage + 1 end
+        table.insert(list, { spec = spec, label = ROLE_GOALS[spec.role] })
+      end
+    end
+    -- druids and shamans deal damage two ways, so there the spec has to be named
+    for i = 1, table.getn(list) do
+      if list[i].label ~= "Damage" or damage > 1 then
+        list[i].label = list[i].label .. " (" .. list[i].spec.name .. ")"
+      end
+    end
+    cache.roleSpecs = list
+  end
+  return cache.roleSpecs
+end
+
+-- Points per stat for one spec on its own: no leveling mix, but with your changes to its weights.
+function ECA.UnitsFor(spec)
+  local key = "role" .. spec.key
+  if not cache[key] then
+    local level = Level()
+    cache[key] = BuildUnits(ECA.class, spec, BuildWeights(ECA.class, spec, ECA.char.custom[spec.key], level), level)
+  end
+  return cache[key]
 end
 
 function ECA.PlayerLevel()

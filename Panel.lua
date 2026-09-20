@@ -350,6 +350,24 @@ local function AddComparison(panel, item, comp, detail)
     panel:AddLine(v.advice, 1, 1, 1, 1)
   end
 
+  -- a second opinion for every role the class can fill
+  if detail >= 2 and ECA.db.showRoles and table.getn(comp.roles) > 0 then
+    panel:AddLine("By role:", 0.62, 0.62, 0.62)
+    for i = 1, table.getn(comp.roles) do
+      local role = comp.roles[i]
+      local rv = role.verdict
+      local text = role.text or rv.text
+      if role.text then
+        -- said in its own words
+      elseif text == "NOTHING FOR YOUR SPEC" then
+        text = "little in it either way"
+      elseif text ~= "SAME STATS" and role.pct and math.abs(role.pct) < 1000 then
+        text = text .. "  " .. ECA.Signed(role.pct) .. "%"
+      end
+      panel:AddDoubleLine("  " .. role.label, text, 1, 1, 1, rv.r, rv.g, rv.b)
+    end
+  end
+
   if detail >= 2 then
     if comp.bestGain then
       panel:AddDoubleLine("Biggest gain", ECA.StatText(comp.bestGain.key, comp.bestGain.diff), 0.62, 0.62, 0.62, 0.3, 1, 0.3)
