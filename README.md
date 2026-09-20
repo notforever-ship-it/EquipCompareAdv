@@ -3,6 +3,7 @@
 Gear comparison for Turtle WoW, Octo WoW, Ravencraft and other 1.12.1 servers. Hover any item you could equip and a panel next to the tooltip tells you:
 
 - **What you have equipped** in that slot: its full tooltip right next to the one you're hovering, like the game's own compare tooltips, plus its score.
+- **The overall effect of swapping**: how much damage per second you'd gain or lose, how much more or less damage you'd take, and what happens to your healing power, health and mana.
 - **Every stat you'd gain and lose**, green and red, with how many score points each one is worth.
 - **A score for both items**, worked out for your class and spec.
 - **A verdict**: big upgrade, upgrade, sidegrade, downgrade or big downgrade, and whether equipping it is recommended.
@@ -41,7 +42,11 @@ Equipped - Head
 Helm of Might                        score 47.1
   Enchant: +8 Stamina
 This item                           score 165.7
-If you swap:
+Overall if you swap:
+  Damage                      +9.8 DPS (+6.1%)
+  Damage reduction                       -2.4%
+  Health                                  -430
+Stat by stat:
   +3 Strength                                +6
   -43 Stamina                              -8.6
   +2% Crit Chance                           +64
@@ -59,6 +64,12 @@ Best for:                     Warrior Arms 100%
 Fit for your spec:                         100%
 ```
 
+- **Overall if you swap** is the headline, worked out from your character as it stands right now:
+  - **Damage**: the change in damage per second. 14 attack power is 1 damage per second, weapon damage counts directly (half in the off hand), and crit, hit and attack speed add their percent on top of your current auto-attack damage. Strength and Agility are turned into attack power and crit first. Hunters get the same for ranged.
+  - **Spell damage**: the change in spell damage for the schools your spec casts, and roughly what that is per second of casting (3.5 spell damage is 1 DPS on a full-strength spell).
+  - **Damage reduction**: how much less physical damage you'd take, from armor against something your own level (a level 63 boss at 60 in raid mode), dodge, parry and defense. Negative means you'd take more.
+  - **Healing power**: the change in bonus healing, and roughly what that is per second of casting.
+  - **Health** and **Mana**, from Stamina and Intellect.
 - The **equipped item's tooltip** sits between the item you hover and the panel, under a "Currently Equipped" tab. Rings, trinkets and weapons can show two. On the auction house the game already shows its own, so the addon leaves those alone and puts the panel underneath.
 - **Rings, trinkets and one-handed weapons** are compared with both slots, and the panel says which one to swap.
 - **Two-handers** are compared with your main hand and off hand together. An off-hand weapon's damage counts half, as it does in game.
@@ -79,9 +90,9 @@ Fit for your spec:                         100%
 
 | Level | Shows |
 | --- | --- |
-| Compact | Both scores, the verdict and the recommendation. |
+| Compact | Both scores, the overall effect, the verdict and the recommendation. |
 | Normal | Plus every stat change, warnings and who the item is made for. |
-| Detailed | Plus before and after numbers, unchanged stats, what the change does in practice (attack power, crit, health...), the effect on your total gear score, and where you stand on hit caps. |
+| Detailed | Plus before and after numbers, unchanged stats, the effect on your total gear score, and where you stand on hit caps. |
 
 Holding **Alt** shows Detailed at any time.
 
@@ -141,6 +152,11 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.2.0**
+
+- New **Overall if you swap** block at the top of every comparison: the change in damage per second, damage reduction, healing power, spell damage, health and mana, worked out from your character's current numbers. Strength, Agility and the rest are already folded in.
+- The addon's version shows at the bottom of the detailed view.
 
 **1.1.0**
 

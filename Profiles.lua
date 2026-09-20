@@ -272,47 +272,38 @@ function ECA.Units()
   return cache.units
 end
 
--- What a set of stat changes really does for this character, in words: "+28 attack power, +0.6% crit".
-function ECA.Derived(d)
+function ECA.PlayerLevel()
+  return Level()
+end
+
+-- What a set of stat changes turns into for this character: attack power, crit, armor, health...
+function ECA.DerivedNumbers(d)
   local spec = ECA.Spec()
   local c = CONV[ECA.class]
   local f = Level() / 60
   if f < 0.2 then f = 0.2 elseif f > 1 then f = 1 end
   local function D(k) return d[k] or 0 end
 
-  local ap = D("AP") + D("STR") * c.strAP + D("AGI") * (spec.agiAP or c.agiAP)
-  if spec.feral then ap = ap + D("FERALAP") end
-  local rap = D("AP") + D("RAP") + D("AGI") * c.agiRAP
-  local crit = D("CRIT") + D("AGI") / (c.agiCrit * f)
-  local dodge = D("DODGE") + D("AGI") / (c.agiDodge * f)
-  local armor = D("ARMOR") + D("AGI") * 2
-  local health = D("HEALTH") + D("STA") * 10
-  local mana = D("MANA") + D("INT") * 15
-  local spellCrit = D("SPELLCRIT")
-  if c.intCrit > 0 then spellCrit = spellCrit + D("INT") / (c.intCrit * f) end
-  local spell = D("SP")
-  local healing = D("SP") + D("HEAL")
-
-  local role = spec.role
-  local parts = {}
-  local function Part(value, label, pct)
-    if math.abs(value) >= 0.05 then
-      table.insert(parts, ECA.Signed(value) .. (pct and "% " or " ") .. label)
-    end
+  local n = {}
+  n.ap = D("AP") + D("STR") * c.strAP + D("AGI") * (spec.agiAP or c.agiAP)
+  if spec.feral then n.ap = n.ap + D("FERALAP") end
+  n.rap = D("AP") + D("RAP") + D("AGI") * c.agiRAP
+  n.crit = D("CRIT") + D("AGI") / (c.agiCrit * f)
+  n.dodge = D("DODGE") + D("AGI") / (c.agiDodge * f)
+  n.armor = D("ARMOR") + D("AGI") * 2
+  n.health = D("HEALTH") + D("STA") * 10
+  n.mana = D("MANA") + D("INT") * 15
+  n.spellCrit = D("SPELLCRIT")
+  if c.intCrit > 0 then n.spellCrit = n.spellCrit + D("INT") / (c.intCrit * f) end
+  n.healing = D("SP") + D("HEAL")
+  -- spell damage: the all-schools kind, plus the schools this spec really casts
+  n.spell = D("SP")
+  local w = ECA.Weights()
+  local schools = { "SHADOWDMG", "FIREDMG", "FROSTDMG", "ARCANEDMG", "NATUREDMG", "HOLYDMG" }
+  for i = 1, 6 do
+    if (w[schools[i]] or 0) >= 0.5 then n.spell = n.spell + D(schools[i]) end
   end
-  if role == "melee" then
-    Part(ap, "attack power") Part(crit, "crit", true) Part(D("HIT"), "hit", true) Part(health, "health")
-  elseif role == "ranged" then
-    Part(rap, "ranged attack power") Part(crit, "crit", true) Part(D("HIT"), "hit", true) Part(health, "health")
-  elseif role == "tank" then
-    Part(health, "health") Part(armor, "armor") Part(dodge, "dodge", true) Part(D("DEFENSE"), "defense") Part(ap, "attack power")
-  elseif role == "caster" then
-    Part(spell, "spell damage") Part(spellCrit, "spell crit", true) Part(D("SPELLHIT"), "spell hit", true)
-    Part(mana, "mana") Part(health, "health")
-  else
-    Part(healing, "healing") Part(spellCrit, "spell crit", true) Part(mana, "mana") Part(D("MP5"), "mana per 5")
-  end
-  return parts
+  return n
 end
 
 function ECA.SetWeight(stat, value)

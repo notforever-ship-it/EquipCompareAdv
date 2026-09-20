@@ -185,6 +185,133 @@ local function SameStats(a, b)
   return true
 end
 
+------------------------------------------------------------------------------------------------------
+-- The headline: what the swap does to your damage, the damage you take, and your healing
+------------------------------------------------------------------------------------------------------
+
+local PARRY_CLASSES = { WARRIOR = true, PALADIN = true, ROGUE = true, HUNTER = true }
+local HEALING_CLASSES = { PALADIN = true, PRIEST = true, SHAMAN = true, DRUID = true }
+local NO_MANA = { WARRIOR = true, ROGUE = true }
+
+-- Auto-attack damage per second right now, and whether both hands swing.
+local function CurrentDps(ranged)
+  if ranged then
+    local speed, lo, hi = UnitRangedDamage("player")
+    if speed and speed > 0 and lo and hi then return (lo + hi) / 2 / speed, false end
+    return 0, false
+  end
+  local lo, hi, offLo, offHi = UnitDamage("player")
+  local speed, offSpeed = UnitAttackSpeed("player")
+  local dps, both = 0, false
+  if lo and hi and speed and speed > 0 then dps = (lo + hi) / 2 / speed end
+  if offSpeed and offSpeed > 0 and offLo and offHi and offHi > 0 then
+    dps = dps + (offLo + offHi) / 2 / offSpeed
+    both = true
+  end
+  return dps, both
+end
+
+-- How much less physical damage you'd take, in percent: armor against something your own level (a
+-- level 63 boss in raid mode), plus dodge, parry and what defense adds to them.
+local function DamageReduction(n, diff)
+  local _, armor = UnitArmor("player")
+  armor = armor or 0
+  local attacker = ECA.PlayerLevel()
+  if attacker >= 60 and ECA.CapMode() == "raid" then attacker = 63 end
+  local function FromArmor(a)
+    if a < 0 then a = 0 end
+    local r = a / (a + 400 + 85 * attacker)
+    if r > 0.75 then r = 0.75 end
+    return r
+  end
+
+  local parries = PARRY_CLASSES[ECA.class]
+  local avoid = 5   -- everything misses you 5% of the time
+  if GetDodgeChance then avoid = avoid + (GetDodgeChance() or 0) else avoid = avoid + 5 end
+  if parries and GetParryChance then avoid = avoid + (GetParryChance() or 0) end
+  local defense = diff.DEFENSE or 0
+  local avoidNew = avoid + n.dodge + defense * (parries and 0.12 or 0.08)
+  if parries then avoidNew = avoidNew + (diff.PARRY or 0) end
+  if avoid > 95 then avoid = 95 end
+  if avoidNew > 95 then avoidNew = 95 elseif avoidNew < 0 then avoidNew = 0 end
+
+  local before = (1 - FromArmor(armor)) * (1 - avoid / 100)
+  local after = (1 - FromArmor(armor + n.armor)) * (1 - avoidNew / 100) * (1 - defense * 0.0004)
+  if before <= 0 then return 0 end
+  return (1 - after / before) * 100
+end
+
+-- The lines of the "Overall" block: { label, text, value } with value > 0 good, < 0 bad.
+local function Overall(newStats, oldStats, other, slot)
+  local diff = {}
+  for k, v in pairs(newStats) do diff[k] = v - (oldStats[k] or 0) end
+  for k, v in pairs(oldStats) do
+    if newStats[k] == nil then diff[k] = -v end
+  end
+  local n = ECA.DerivedNumbers(diff)
+  local role = ECA.Spec().role
+  local caps = ECA.Caps()
+  local function CappedDiff(key)
+    local new, old = newStats[key] or 0, oldStats[key] or 0
+    if caps[key] then
+      local o = other and other[key] or 0
+      return Capped(new, caps[key], o) - Capped(old, caps[key], o)
+    end
+    return new - old
+  end
+
+  local lines = {}
+  local function Line(label, text, value)
+    if math.abs(value) < 0.05 then text, value = "no change", 0 end
+    table.insert(lines, { label = label, text = text, value = value })
+  end
+
+  -- Damage from attacks: 14 attack power is 1 damage per second, weapon damage counts directly, and
+  -- crit, hit and speed each add their percent on top.
+  local physical = (role ~= "caster" and role ~= "healer")
+  local ranged = (role == "ranged")
+  local weapon = 0
+  if ranged then
+    weapon = diff.RDPS or 0
+  elseif (ECA.Weights().DPS or 0) > 0 then
+    weapon = diff.DPS or 0
+    if slot == 17 then weapon = weapon * 0.5 end
+  end
+  local base, both = CurrentDps(ranged)
+  local flat = (ranged and n.rap or n.ap) / 14 * (both and 1.5 or 1) + weapon
+  local pct = n.crit + CappedDiff("HIT") + (diff.HASTE or 0)
+  local dps = flat + (base + flat) * pct / 100
+  if physical or math.abs(dps) >= 0.05 then
+    local text = ECA.Signed(dps) .. " DPS"
+    if base > 0 then text = text .. " (" .. ECA.Signed(dps / base * 100) .. "%)" end
+    Line("Damage", text, dps)
+  end
+
+  -- Spells: a full-coefficient spell turns 3.5 spell damage into 1 damage per second of casting.
+  if role == "caster" or (role ~= "healer" and math.abs(n.spell) >= 0.5) then
+    Line("Spell damage", ECA.Signed(n.spell) .. " (about " .. ECA.Signed(n.spell / 3.5) .. " DPS)", n.spell)
+  end
+  if role == "caster" then
+    local spellPct = n.spellCrit * 0.5 + CappedDiff("SPELLHIT") + (diff.HASTE or 0)
+    if math.abs(spellPct) >= 0.05 then
+      Line("Spell crit, hit, speed", ECA.Signed(spellPct) .. "% damage", spellPct)
+    end
+  end
+
+  local reduction = DamageReduction(n, diff)
+  if role == "tank" or math.abs(reduction) >= 0.05 then
+    Line("Damage reduction", ECA.Signed(reduction) .. "%", reduction)
+  end
+
+  if role == "healer" or (HEALING_CLASSES[ECA.class] and math.abs(n.healing) >= 0.5) then
+    Line("Healing power", ECA.Signed(n.healing) .. " (about " .. ECA.Signed(n.healing / 3.5) .. " a second)", n.healing)
+  end
+
+  if math.abs(n.health) >= 1 then Line("Health", ECA.Signed(n.health), n.health) end
+  if math.abs(n.mana) >= 1 and not NO_MANA[ECA.class] then Line("Mana", ECA.Signed(n.mana), n.mana) end
+  return lines
+end
+
 -- One hovered item against one equipped item (or pair).
 local function Build(item, slot, label, equipped, removedA, removedB, note)
   local dpsScale = DpsScale(slot)
@@ -219,6 +346,7 @@ local function Build(item, slot, label, equipped, removedA, removedB, note)
   local identical = (not equipped.empty) and equipped.name == item.name and SameStats(newStats, oldStats)
   comp.verdict = Verdict(comp.newScore, comp.oldScore, equipped.empty, identical)
   comp.other = other
+  comp.overall = Overall(newStats, oldStats, other, slot)
   return comp
 end
 

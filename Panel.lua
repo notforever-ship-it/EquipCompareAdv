@@ -276,9 +276,20 @@ local function AddComparison(panel, item, comp, detail)
   end
   panel:AddDoubleLine("This item", ScoreText(comp.newScore), 0.62, 0.62, 0.62, 1, 1, 1)
 
+  -- the headline: what the swap does to your damage, the damage you take and your healing
+  if table.getn(comp.overall) > 0 then
+    panel:AddLine("Overall if you swap:", 1, 0.82, 0)
+    for i = 1, table.getn(comp.overall) do
+      local o = comp.overall[i]
+      local r, g, b = 0.62, 0.62, 0.62
+      if o.value > 0 then r, g, b = 0.3, 1, 0.3 elseif o.value < 0 then r, g, b = 1, 0.35, 0.35 end
+      panel:AddDoubleLine("  " .. o.label, o.text, 1, 1, 1, r, g, b)
+    end
+  end
+
   if detail >= 2 then
     if table.getn(comp.changes) > 0 then
-      panel:AddLine("If you swap:", 0.62, 0.62, 0.62)
+      panel:AddLine("Stat by stat:", 0.62, 0.62, 0.62)
     end
     for i = 1, table.getn(comp.changes) do
       local c = comp.changes[i]
@@ -313,17 +324,6 @@ local function AddComparison(panel, item, comp, detail)
     end
     if same ~= "" then panel:AddLine("  Unchanged: " .. same, 0.62, 0.62, 0.62, 1) end
 
-    local diff = {}
-    for i = 1, table.getn(comp.changes) do diff[comp.changes[i].key] = comp.changes[i].diff end
-    local parts = ECA.Derived(diff)
-    if table.getn(parts) > 0 then
-      local line = "  In practice: "
-      for i = 1, table.getn(parts) do
-        if i > 1 then line = line .. ", " end
-        line = line .. parts[i]
-      end
-      panel:AddLine(line, 0.75, 0.85, 1, 1)
-    end
   end
 
   -- verdict
@@ -440,7 +440,7 @@ local function Render(state, item)
     panel:AddLine("Hold Alt for more detail", 0.45, 0.45, 0.45)
   end
   if detail >= 3 then
-    panel:AddLine("Made by stealthzi", 0.45, 0.45, 0.45)
+    panel:AddLine("Made by stealthzi   v" .. ECA.VERSION, 0.45, 0.45, 0.45)
   end
 
   panel:Show()
