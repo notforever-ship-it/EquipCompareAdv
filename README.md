@@ -74,9 +74,9 @@ Fit for your spec:                         100%
   - **Damage reduction**: how much less physical damage you'd take, from armor against something your own level (a level 63 boss at 60 in raid mode), dodge, parry and defense. Negative means you'd take more.
   - **Healing power**: the change in bonus healing, and roughly what that is per second of casting.
   - **Health** and **Mana**, from Stamina and Intellect.
-- **By role** gives a second opinion for each role your class can fill: the same swap judged purely as a tank, as a healer and as damage, without the leveling mix. A warrior sees two lines, a paladin three, a druid four; rogues, hunters, mages and warlocks only deal damage, so they get none. Switch it off in `/eca` or with `/eca roles`.
+- **By role** (left out when every role agrees, as with plain armor) gives a second opinion for each role your class can fill: the same swap judged purely as a tank, as a healer and as damage, without the leveling mix. A warrior sees two lines, a paladin three, a druid four; rogues, hunters, mages and warlocks only deal damage, so they get none. Switch it off in `/eca` or with `/eca roles`.
 - The **equipped item's tooltip** sits between the item you hover and the panel, under a "Currently Equipped" tab. Rings, trinkets and weapons can show two. On the auction house the game already shows its own, so the addon leaves those alone and puts the panel underneath.
-- **Rings, trinkets and one-handed weapons** are compared with both slots, and the panel says which one to swap.
+- **Rings, trinkets and one-handed weapons** are compared with both slots, and the panel says which one to swap. The better swap is shown in full and the other in two lines; hold Alt to see both in full.
 - **Two-handers** are compared with your main hand and off hand together. An off-hand weapon's damage counts half, as it does in game.
 - **Hovering something you're wearing** shows its score and your total gear score instead.
 - The **character window** shows your total gear score under your character.
@@ -85,9 +85,11 @@ Fit for your spec:                         100%
 
 | Verdict | Meaning |
 | --- | --- |
-| BIG UPGRADE | 15% or more better than what you have. Equip it. |
+| BIG UPGRADE | 15% or more better than what you have, and enough to move your whole gear score by 2%. Equip it. |
 | UPGRADE | 3% to 15% better. Equip it. |
-| SIDEGRADE | Within 3%. Pick the stats you like more. |
+| SLIGHT UPGRADE | Nothing lost and a little gained: more armor and nothing else changed, say. Equip it. |
+| SIDEGRADE | Within 3%, with something gained and something lost. Pick the stats you like more. |
+| SLIGHT DOWNGRADE | A little lost and nothing gained. |
 | DOWNGRADE / BIG DOWNGRADE | Worse. Keep what you have. |
 | BETTER THAN NOTHING | The slot is empty, but the item's stats do little for your spec. |
 | NOTHING FOR YOUR SPEC | Neither item has a stat your spec counts. Go by the Overall lines, or score for another spec. |
@@ -120,6 +122,8 @@ Melee and hunter scores count in attack power, caster scores in spell damage, he
 **Hit caps.** Hit stops helping once you can't miss. The addon adds up the hit on the rest of your gear and the hit talents you've taken (Precision, Surefooted, Nature's Guidance, Elemental Precision, Arcane Focus, Shadow Focus, Suppression), and only counts the part of an item's hit that still does something. Past the cap, hit keeps half its value if you dual wield and none otherwise. Caps are 9% melee and ranged and 16% spell against raid bosses, 5% and 3% against things your own level; **Auto** uses the raid numbers at level 60. Tanks in raid mode also value defense less past 440.
 
 **Leveling healers and tanks** still have to kill things. Below level 60 their class's damage spec (Arms, Retribution, Shadow, Enhancement, Cat) is mixed into the score: nearly all of it at level 10, fading to none at 60. The panel header shows "+ leveling" while it applies. Switch it off in `/eca` or with `/eca leveling`.
+
+**Staying alive while leveling.** Below 60 you mostly fight alone, so damage specs and healers get a little extra for health and armor, fading out by 60. Tanks already count them fully.
 
 **Leveling casters** get a weight for wand damage that fades to nothing by level 60.
 
@@ -162,6 +166,15 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.3.1**
+
+- Fixed the panel and equipped tooltips jumping between two spots when the hovered tooltip was near the middle of the screen. The layout is now worked out once per item and kept, and tops line up like the game's own compare tooltips unless that would run off the screen.
+- Rings, trinkets and one-handers: the better swap is shown in full and the other in two lines, so the panel is much shorter. Alt shows both in full.
+- New verdicts **SLIGHT UPGRADE** and **SLIGHT DOWNGRADE** for swaps that only add or only take away, instead of calling plain extra armor a "sidegrade".
+- Health and armor count a little more below level 60.
+- A red "Two-Hand" (a weapon kind you haven't learned) now shows the "can't use this" warning.
+- "Fit for your spec" follows the leveling mix, so it no longer says 0% next to a BIG UPGRADE.
 
 **1.3.0**
 

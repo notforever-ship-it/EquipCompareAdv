@@ -10,10 +10,12 @@ local EMPTY = { empty = true, stats = {}, enchantStats = {}, extras = {} }
 
 local gear = {}        -- slot -> parsed item or EMPTY
 local gearTotals       -- every equipped stat added up
+local gearScore        -- the score of all of it
 
 function ECA.ClearGearCache()
   gear = {}
   gearTotals = nil
+  gearScore = nil
   if ECA.InvalidateCaps then ECA.InvalidateCaps() end
 end
 
@@ -135,26 +137,43 @@ local VERDICTS = {
   down = { text = "DOWNGRADE", advice = "Not recommended: keep what you have.", r = 1, g = 0.5, b = 0.2 },
   bigdown = { text = "BIG DOWNGRADE", advice = "Not recommended: keep what you have.", r = 1, g = 0.25, b = 0.25 },
   same = { text = "SAME STATS", advice = "Identical to what you're wearing.", r = 0.8, g = 0.8, b = 0.8 },
+  slightup = { text = "SLIGHT UPGRADE", advice = "Recommended: nothing lost and a little gained.", r = 0.6, g = 1, b = 0.6 },
+  slightdown = { text = "SLIGHT DOWNGRADE", advice = "Not recommended: a little lost and nothing gained.", r = 1, g = 0.65, b = 0.3 },
   none = { text = "NOTHING FOR YOUR SPEC", advice = "None of these stats count for the spec being scored. Go by the Overall lines, or score for another spec in /eca.", r = 0.8, g = 0.8, b = 0.8 },
 }
 
-local function Verdict(newScore, oldScore, empty, identical, changed)
+-- 'trade' says whether anything is being given up: 1 = every changed stat goes up, -1 = every one goes
+-- down, nil = some of each. An item that only adds is never "about equal", however small the gain.
+-- 'total' is the score of everything you're wearing: a swap is only BIG when it also moves that by 2%.
+-- Boots with half as much armor again are a 50% better pair of boots and still a small step overall.
+local function Judge(newScore, oldScore, empty, identical, changed, total)
   if identical then return VERDICTS.same end
   if changed and math.abs(newScore) < 0.05 and math.abs(oldScore) < 0.05 then return VERDICTS.none end
   local diff = newScore - oldScore
+  local matters = (not total) or total < 1 or math.abs(diff) >= total * 0.02
   if empty then
-    if diff > 0.5 then return VERDICTS.bigup end
+    if diff > 0.5 and matters then return VERDICTS.bigup end
+    if diff > 0.5 then return VERDICTS.up end
     return VERDICTS.side
   end
   local pct
   if oldScore > 0.5 then pct = diff / oldScore * 100 end
   if math.abs(diff) < 0.5 or (pct and math.abs(pct) < 3) then return VERDICTS.side end
   if diff > 0 then
-    if not pct or pct >= 15 then return VERDICTS.bigup end
+    if matters and (not pct or pct >= 15) then return VERDICTS.bigup end
     return VERDICTS.up
   end
-  if pct and pct <= -15 then return VERDICTS.bigdown end
+  if matters and pct and pct <= -15 then return VERDICTS.bigdown end
   return VERDICTS.down
+end
+
+local function Verdict(newScore, oldScore, empty, identical, changed, trade, total)
+  local v = Judge(newScore, oldScore, empty, identical, changed, total)
+  if v == VERDICTS.side or v == VERDICTS.none then
+    if trade == 1 then return VERDICTS.slightup end
+    if trade == -1 then return VERDICTS.slightdown end
+  end
+  return v
 end
 
 -- Two equipped items that would both come off (a two-hander replacing main hand and off hand).
@@ -316,7 +335,7 @@ end
 
 -- The same swap judged purely for each role the class can fill: a paladin sees tanking, healing and
 -- damage. Hit caps are left out here; they matter to the main verdict, not to a second opinion.
-local function RoleVerdicts(item, newStats, oldStats, slot, empty, identical, changed)
+local function RoleVerdicts(item, newStats, oldStats, slot, empty, identical, changed, trade)
   local roles = ECA.RoleSpecs()
   if table.getn(roles) < 2 then return {} end
   local list, best = {}, 0
@@ -343,7 +362,7 @@ local function RoleVerdicts(item, newStats, oldStats, slot, empty, identical, ch
       -- worth next to nothing to this role either way: +80% of nearly nothing isn't an upgrade
       entry.verdict = VERDICTS.none
     else
-      entry.verdict = Verdict(entry.new, entry.old, empty, identical, changed)
+      entry.verdict = Verdict(entry.new, entry.old, empty, identical, changed, trade)
       if entry.old > 0.5 then entry.pct = (entry.new - entry.old) / entry.old * 100 end
     end
   end
@@ -382,8 +401,17 @@ local function Build(item, slot, label, equipped, removedA, removedB, note)
   end
 
   local identical = (not equipped.empty) and equipped.name == item.name and SameStats(newStats, oldStats)
-  comp.verdict = Verdict(comp.newScore, comp.oldScore, equipped.empty, identical, table.getn(comp.changes) > 0)
-  comp.roles = RoleVerdicts(item, newStats, oldStats, slot, equipped.empty, identical, table.getn(comp.changes) > 0)
+  -- is anything being traded away? Use and proc effects count as something to lose
+  local gains, losses = 0, 0
+  for i = 1, table.getn(comp.changes) do
+    if comp.changes[i].diff > 0 then gains = gains + 1 else losses = losses + 1 end
+  end
+  local trade
+  if gains > 0 and losses == 0 and table.getn(equipped.extras) == 0 then trade = 1 end
+  if losses > 0 and gains == 0 and table.getn(item.extras) == 0 then trade = -1 end
+  local changed = table.getn(comp.changes) > 0
+  comp.verdict = Verdict(comp.newScore, comp.oldScore, equipped.empty, identical, changed, trade, ECA.TotalScore())
+  comp.roles = RoleVerdicts(item, newStats, oldStats, slot, equipped.empty, identical, changed, trade)
   comp.other = other
   comp.overall = Overall(newStats, oldStats, other, slot)
   return comp
@@ -451,11 +479,14 @@ function ECA.SlotScore(slot)
 end
 
 function ECA.TotalScore()
-  local total = 0
-  for i = 1, table.getn(ECA.GEAR_SLOTS) do
-    total = total + ECA.SlotScore(ECA.GEAR_SLOTS[i])
+  if not gearScore then
+    local total = 0
+    for i = 1, table.getn(ECA.GEAR_SLOTS) do
+      total = total + ECA.SlotScore(ECA.GEAR_SLOTS[i])
+    end
+    gearScore = total
   end
-  return total
+  return gearScore
 end
 
 -- Where the capped stats stand, for the detailed view: "Hit 6% of 9%".

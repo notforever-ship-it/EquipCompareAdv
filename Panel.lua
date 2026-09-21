@@ -106,9 +106,12 @@ local function Width(frame)
   return (frame:GetWidth() or 0) * (frame:GetScale() or 1)
 end
 
+local function Height(frame)
+  return (frame:GetHeight() or 0) * (frame:GetScale() or 1)
+end
+
 -- Tooltip, then what you're wearing, then the panel, in a row on whichever side has room. If the row is
--- too long for one side the panel takes the other. Everything lines up along the top, or along the
--- bottom when the tooltip sits low on screen.
+-- too long for one side the panel takes the other.
 -- When the game's own compare tooltips are up (the auction house) they own the sides, so the panel goes
 -- underneath, or on top when there's no room below.
 local function Anchor(state, force)
@@ -139,38 +142,56 @@ local function Anchor(state, force)
     end
   end
 
-  local side, panelSide, vert = "LEFT", "LEFT", "TOP"
-  local left, right, top = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop()
-  if left and right and top then
-    local scale = tooltip:GetScale() or 1
-    local screenW, screenH = UIParent:GetWidth(), UIParent:GetHeight()
-    local roomRight, roomLeft = screenW - right * scale, left * scale
-    local tipsWidth, panelWidth = 0, Width(panel)
-    for n = 1, table.getn(tips) do tipsWidth = tipsWidth + Width(tips[n]) end
+  -- The layout is worked out once for the item under the mouse and then kept. Other addons add lines to
+  -- the tooltip a moment after it appears, and the game refreshes some tooltips several times a second;
+  -- deciding again each time made the frames jump between two spots when the numbers were close.
+  local first = getglobal(tooltip:GetName() .. "TextLeft1")
+  local name = first and first:GetText() or ""
+  local plan = state.plan
+  if plan and (plan.name ~= name or plan.tips ~= table.getn(tips) or plan.alt ~= state.alt) then plan = nil end
+  if not plan then
+    local left, right, top = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop()
+    if left and right and top then
+      local scale = tooltip:GetScale() or 1
+      local screenW = UIParent:GetWidth()
+      local roomRight, roomLeft = screenW - right * scale, left * scale
+      local tipsWidth, tipsHeight, panelWidth = 0, 0, Width(panel)
+      for n = 1, table.getn(tips) do
+        tipsWidth = tipsWidth + Width(tips[n])
+        if Height(tips[n]) > tipsHeight then tipsHeight = Height(tips[n]) end
+      end
 
-    local room = { RIGHT = roomRight, LEFT = roomLeft }
-    local big, small = "LEFT", "RIGHT"
-    if roomRight >= roomLeft then big, small = "RIGHT", "LEFT" end
-    -- the right is where the game puts things, so it wins whenever the whole row fits there
-    if roomRight >= tipsWidth + panelWidth then
-      side, panelSide = "RIGHT", "RIGHT"
-    elseif room[big] >= tipsWidth + panelWidth then
-      side, panelSide = big, big
-    elseif room[big] >= tipsWidth and room[small] >= panelWidth then
-      side, panelSide = big, small
-    elseif room[small] >= tipsWidth and room[big] >= panelWidth then
-      side, panelSide = small, big
-    else
-      side, panelSide = big, big
+      plan = { name = name, tips = table.getn(tips), alt = state.alt }
+      local room = { RIGHT = roomRight, LEFT = roomLeft }
+      local big, small = "LEFT", "RIGHT"
+      if roomRight >= roomLeft then big, small = "RIGHT", "LEFT" end
+      -- the right is where the game puts things, so it wins whenever the whole row fits there
+      if roomRight >= tipsWidth + panelWidth then
+        plan.side, plan.panelSide = "RIGHT", "RIGHT"
+      elseif room[big] >= tipsWidth + panelWidth then
+        plan.side, plan.panelSide = big, big
+      elseif room[big] >= tipsWidth and room[small] >= panelWidth then
+        plan.side, plan.panelSide = big, small
+      elseif room[small] >= tipsWidth and room[big] >= panelWidth then
+        plan.side, plan.panelSide = small, big
+      else
+        plan.side, plan.panelSide = big, big
+      end
+      -- tops line up, like the game's own compare tooltips, unless that would run off the bottom
+      plan.tipVert, plan.panelVert = "TOP", "TOP"
+      if top * scale - tipsHeight < 0 then plan.tipVert = "BOTTOM" end
+      if top * scale - Height(panel) < 0 then plan.panelVert = "BOTTOM" end
+      state.plan = plan
     end
-    if top * scale < screenH * 0.45 then vert = "BOTTOM" end
   end
 
-  local layout = side .. panelSide .. vert .. table.getn(tips)
+  local side, panelSide, tipVert, panelVert = "LEFT", "LEFT", "TOP", "TOP"
+  if plan then side, panelSide, tipVert, panelVert = plan.side, plan.panelSide, plan.tipVert, plan.panelVert end
+  local layout = side .. panelSide .. tipVert .. panelVert .. table.getn(tips)
   if not force and state.layout == layout then return end
   state.layout = layout
 
-  local function Beside(frame, anchor, where)
+  local function Beside(frame, anchor, where, vert)
     frame:ClearAllPoints()
     if where == "RIGHT" then
       frame:SetPoint(vert .. "LEFT", anchor, vert .. "RIGHT", 0, 0)
@@ -180,10 +201,10 @@ local function Anchor(state, force)
   end
   local last = tooltip
   for n = 1, table.getn(tips) do
-    Beside(tips[n], last, side)
+    Beside(tips[n], last, side, tipVert)
     last = tips[n]
   end
-  if panelSide == side then Beside(panel, last, side) else Beside(panel, tooltip, panelSide) end
+  if panelSide == side then Beside(panel, last, side, panelVert) else Beside(panel, tooltip, panelSide, panelVert) end
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -259,7 +280,8 @@ local function AddExtras(panel, title, extras, r, g, b)
   end
 end
 
--- One comparison block: equipped item, scores, changes, verdict.
+-- One comparison block: equipped item, scores, changes, verdict. detail 0 is the two-line version used
+-- for the second ring, trinket or weapon slot.
 local function AddComparison(panel, item, comp, detail)
   local eq = comp.equipped
   panel:AddLine(" ")
@@ -274,10 +296,12 @@ local function AddComparison(panel, item, comp, detail)
         (ECA.db.ignoreEnchants and " (ignored)" or ""), 0.4, 0.8, 0.4)
     end
   end
-  panel:AddDoubleLine("This item", ScoreText(comp.newScore), 0.62, 0.62, 0.62, 1, 1, 1)
+  if detail >= 1 then
+    panel:AddDoubleLine("This item", ScoreText(comp.newScore), 0.62, 0.62, 0.62, 1, 1, 1)
+  end
 
   -- the headline: what the swap does to your damage, the damage you take and your healing
-  if table.getn(comp.overall) > 0 then
+  if detail >= 1 and table.getn(comp.overall) > 0 then
     panel:AddLine("Overall if you swap:", 1, 0.82, 0)
     for i = 1, table.getn(comp.overall) do
       local o = comp.overall[i]
@@ -340,7 +364,9 @@ local function AddComparison(panel, item, comp, detail)
   else
     panel:AddLine(">> " .. v.text .. numbers, v.r, v.g, v.b)
   end
-  if item.red then
+  if detail < 1 then
+    -- the short version stops at the verdict
+  elseif item.red then
     panel:AddLine("For reference only: you can't equip it right now.", 1, 1, 1, 1)
   elseif poorFit then
     panel:AddLine("That slot is empty, but these stats do little for your spec. Keep looking.", 1, 1, 1, 1)
@@ -351,7 +377,12 @@ local function AddComparison(panel, item, comp, detail)
   end
 
   -- a second opinion for every role the class can fill
-  if detail >= 2 and ECA.db.showRoles and table.getn(comp.roles) > 0 then
+  -- plain armor is worth the same to everyone: when every role agrees with the verdict above, say nothing
+  local rolesAgree = true
+  for i = 1, table.getn(comp.roles) do
+    if comp.roles[i].text or comp.roles[i].verdict ~= comp.roles[1].verdict then rolesAgree = false end
+  end
+  if detail >= 2 and ECA.db.showRoles and table.getn(comp.roles) > 0 and not rolesAgree then
     panel:AddLine("By role:", 0.62, 0.62, 0.62)
     for i = 1, table.getn(comp.roles) do
       local role = comp.roles[i]
@@ -411,8 +442,17 @@ local function Render(state, item)
       panel:AddLine("You can't use this right now: " .. Shorten(item.red, 60), 1, 0.25, 0.25, 1)
     end
     local comps = ECA.Compare(item)
+    -- With two slots to choose from, the better swap is shown in full and the other in two lines, so the
+    -- panel stays a sensible height. Alt shows both in full.
+    local first, second = comps[1], comps[2]
+    if comps.best and comps.best == second then first, second = second, first end
+    if first then AddComparison(panel, item, first, detail) end
+    if second then
+      local brief = detail
+      if comps.best and detail < 3 then brief = 0 end
+      AddComparison(panel, item, second, brief)
+    end
     for i = 1, table.getn(comps) do
-      AddComparison(panel, item, comps[i], detail)
       for j = 1, table.getn(comps[i].slots) do table.insert(equippedSlots, comps[i].slots[j]) end
     end
     if detail >= 3 and table.getn(comps) > 0 then
@@ -480,6 +520,8 @@ function ECA.UpdateTooltip(tooltip)
   if not state or not ECA.char then return end
   state.sig = Signature(tooltip)
   state.shift, state.alt = IsShiftKeyDown(), IsAltKeyDown()
+  if state.hiddenAt and GetTime() - state.hiddenAt > 0.3 then state.plan = nil end
+  state.hiddenAt = nil
   if not ECA.db.enabled or not tooltip:IsShown() or (ECA.db.shiftOnly and not state.shift) then
     HidePanel(state)
     return
@@ -534,6 +576,7 @@ local function Follow(tooltip, index)
   watcher:SetScript("OnShow", function() ECA.Safe(ECA.UpdateTooltip, state.tooltip) end)
   watcher:SetScript("OnHide", function()
     state.equippedSlot = nil
+    state.hiddenAt = GetTime()
     HidePanel(state)
   end)
   watcher:SetScript("OnUpdate", function()

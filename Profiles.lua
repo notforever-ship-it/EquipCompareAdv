@@ -253,6 +253,13 @@ local function BuildWeights(class, spec, custom, level)
       if w[k] then w[k] = w[k] * f end
     end
   end
+  -- On the way to 60 you fight alone, so staying alive is worth more to a damage spec or a healer than
+  -- it is in a raid: a little extra for health and armor that fades out by 60.
+  if level < 60 and spec.role ~= "tank" then
+    local young = 1 - level / 60
+    w.HEALTH = (w.HEALTH or 0) + 0.07 * young
+    w.ARMOR = (w.ARMOR or 0) + 0.03 * young
+  end
   -- A wand is most of a leveling caster's damage and none of a level 60's.
   if spec.wand and level < 60 then w.RDPS = 4 * (1 - level / 60) end
   if custom then
@@ -583,6 +590,8 @@ function ECA.Fits(item)
 
   local mainArmor = type(item.kind) == "number" and item.subType and ARMOR_RANK[item.subType]
   local mySpec = ECA.Spec()
+  local mixSpec, mixShare = ECA.LevelingMix()
+  local mixFit
   local fits = {}
   if not CanUse(ECA.class, item) then item.notMyClass = true end
   for c = 1, table.getn(ECA.CLASS_ORDER) do
@@ -609,12 +618,15 @@ function ECA.Fits(item)
         local fit = raw
         if fit > 1 then fit = 1 elseif fit < 0 then fit = 0 end
         if class == ECA.class and spec == mySpec then item.myFit = fit end
+        if class == ECA.class and spec == mixSpec then mixFit = fit end
         if raw > 0 then
           table.insert(fits, { class = class, spec = spec, role = spec.role, fit = fit, raw = raw })
         end
       end
     end
   end
+  -- while a damage spec is mixed into the score, it is mixed into "fit for your spec" the same way
+  if mixSpec and item.myFit then item.myFit = item.myFit * (1 - mixShare) + (mixFit or 0) * mixShare end
   table.sort(fits, function(a, b) return a.raw > b.raw end)
   item.fits = fits
   return fits

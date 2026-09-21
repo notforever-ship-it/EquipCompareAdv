@@ -372,6 +372,15 @@ function ECA.ParseTooltip(tipName, numLines, live)
     end
   end
 
+  -- A red slot name: you can't use that kind of item at all (two-handers before you've learned them).
+  if live then
+    local slotText = getglobal(tipName .. "TextLeft" .. slotLine)
+    if slotText and slotText.GetTextColor then
+      local r, g, b = slotText:GetTextColor()
+      if IsRed(r, g, b) then item.red = (slotText:GetText() or "this") .. " items aren't something you can equip" end
+    end
+  end
+
   -- Red text on the right of the slot line: an armor or weapon type you can't use. Says more than a
   -- red "Requires Level", so it wins.
   if live and right and right.GetTextColor then
