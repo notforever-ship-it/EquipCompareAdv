@@ -31,6 +31,8 @@ local CHECKS = {
     tip = "A level 11 healer still has to kill things. Below level 60, healing and tanking specs get their class's damage spec mixed into the score: nearly all of it at level 10, fading to none at 60. The panel header shows '+ leveling' while it applies." },
   { key = "ignoreEnchants", label = "Ignore enchants (compare bare items)",
     tip = "Off: you see what really changes the moment you swap, including the enchant you'd lose.\n\nOn: both items are judged without enchants, which is fairer when you plan to enchant the new one too." },
+  { key = "darkBackground", label = "Dark background behind the panels",
+    tip = "A dark layer behind the comparison panel and the equipped-item tooltips, so small text reads over busy backgrounds.\n\nOff gives the game's own see-through tooltip look." },
 }
 
 -- The 1.12 dialog background art is partly see-through; a solid layer underneath keeps text readable.

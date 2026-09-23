@@ -42,7 +42,7 @@ const KNOWN_GLOBALS = new Set((
   "GetInventoryItemLink GetInventoryItemTexture UnitIsDeadOrGhost UnitOnTaxi GetPetExperience IsTradeskillTrainer UnitRangedDamage GetSpellCooldown GetSpellTexture UnitMana " +
   "SUPERWOW_VERSION " +
   // Equip Compare Adv: talents, the character window, chat link tooltips
-  "GetNumTalentTabs GetNumTalents GetTalentInfo GetTalentTabInfo CharacterModelFrame ItemRefTooltip ShoppingTooltip1 GetDodgeChance GetParryChance"
+  "GetNumTalentTabs GetNumTalents GetTalentInfo GetTalentTabInfo CharacterModelFrame ItemRefTooltip ShoppingTooltip1 ShoppingTooltip2 GetDodgeChance GetParryChance"
 ).split(/\s+/).filter(Boolean));
 
 // Member calls that don't exist in Lua 5.0 / the 1.12 client.

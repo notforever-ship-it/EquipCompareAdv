@@ -20,19 +20,37 @@ local SET_METHODS = { "SetBagItem", "SetInventoryItem", "SetLootItem", "SetLootR
 ------------------------------------------------------------------------------------------------------
 
 -- Tooltip art is see-through, which makes small text hard to read over bags; a dark layer fixes that.
+-- It can be switched off for the game's normal look.
 local function Darken(tip)
   local solid = tip:CreateTexture(nil, "BACKGROUND")
   solid:SetTexture(0, 0, 0, 0.75)
   solid:SetPoint("TOPLEFT", tip, "TOPLEFT", 4, -4)
   solid:SetPoint("BOTTOMRIGHT", tip, "BOTTOMRIGHT", -4, 4)
+  tip.ecaSolid = solid
+  if ECA.db and ECA.db.darkBackground == false then solid:Hide() end
 end
+
+local allTips = {}
 
 local function NewTip(name)
   local tip = CreateFrame("GameTooltip", name, UIParent, "GameTooltipTemplate")
   tip:SetFrameStrata("TOOLTIP")
   if tip.SetClampedToScreen then tip:SetClampedToScreen(true) end
   Darken(tip)
+  table.insert(allTips, tip)
   return tip
+end
+
+-- Dark layer on or off, on every panel and equipped-item tooltip the addon has made.
+function ECA.ApplyLook()
+  local dark = not (ECA.db and ECA.db.darkBackground == false)
+  for i = 1, table.getn(allTips) do
+    local tip = allTips[i]
+    if tip.ecaSolid then
+      if dark then tip.ecaSolid:Show() else tip.ecaSolid:Hide() end
+    end
+    if tip.tab then tip.tab:SetBackdropColor(0, 0, 0, dark and 0.95 or 0.7) end
+  end
 end
 
 local function GetPanel(state)
@@ -75,13 +93,16 @@ end
 local function HidePanel(state)
   if state.panel then state.panel:Hide() end
   HideEquippedTips(state)
+  state.sig = nil
+  state.hideAt = nil
 end
 
--- Fill the equipped-item tooltips for these inventory slots. The game's compare tooltips already do
--- this on the auction house, so there they are left alone.
+-- Fill the equipped-item tooltips for these inventory slots. They are filled whenever the setting is
+-- on; whether they show is decided when the row is laid out, because the game's own compare tooltips
+-- (the auction house shows them on hover) already do the same job and take the space.
 local function ShowEquippedTips(state, slots)
   local shown = 0
-  if ECA.db.showEquipped and not (ShoppingTooltip1 and ShoppingTooltip1:IsVisible()) then
+  if ECA.db.showEquipped then
     for i = 1, table.getn(slots) do
       if shown < 2 then
         local tip = GetEquippedTip(state, shown + 1)
@@ -99,7 +120,35 @@ local function ShowEquippedTips(state, slots)
     end
   end
   HideEquippedTips(state, shown + 1)
+  state.equippedCount = shown
   state.layout = nil
+end
+
+local function ReshowEquippedTips(state)
+  if not state.equippedTips then return end
+  for n = 1, state.equippedCount or 0 do
+    if not state.equippedTips[n]:IsShown() then state.equippedTips[n]:Show() end
+  end
+end
+
+-- Are the game's own compare tooltips up? At the auction house they come and go a frame apart from the
+-- main tooltip on every list refresh, so "seen within the last third of a second" counts as up. Without
+-- that the row jumped between two layouts several times a second, which looked like blinking.
+local function ShoppingUp(state)
+  if (ShoppingTooltip1 and ShoppingTooltip1:IsVisible()) or (ShoppingTooltip2 and ShoppingTooltip2:IsVisible()) then
+    state.shoppingSeen = GetTime()
+    return true
+  end
+  return state.shoppingSeen ~= nil and GetTime() - state.shoppingSeen < 0.3
+end
+
+-- Which side of the tooltip the game's compare tooltips sit on.
+local function ShoppingSide(state, tooltip)
+  local s = ShoppingTooltip1
+  if s and s:IsVisible() and s:GetLeft() and tooltip:GetLeft() then
+    state.shoppingSide = (s:GetLeft() < tooltip:GetLeft()) and "LEFT" or "RIGHT"
+  end
+  return state.shoppingSide or "RIGHT"
 end
 
 local function Width(frame)
@@ -112,29 +161,51 @@ end
 
 -- Tooltip, then what you're wearing, then the panel, in a row on whichever side has room. If the row is
 -- too long for one side the panel takes the other.
--- When the game's own compare tooltips are up (the auction house) they own the sides, so the panel goes
--- underneath, or on top when there's no room below.
+-- When the game's own compare tooltips are up (the auction house) they take one side, so the panel goes
+-- on the other side, or under or over the tooltip when that fits better. Nothing is ever put where it
+-- cannot fit and then clamped onto the tooltip, which is what used to overlap at the auction house.
 local function Anchor(state, force)
   local panel, tooltip = state.panel, state.tooltip
   if not panel or not panel:IsShown() then return end
 
-  if ShoppingTooltip1 and ShoppingTooltip1:IsVisible() then
+  if ShoppingUp(state) then
     HideEquippedTips(state)
-    local bottom = tooltip:GetBottom()
-    local layout = "UNDER"
-    if bottom and bottom * (tooltip:GetScale() or 1) < (panel:GetHeight() or 0) * (panel:GetScale() or 1) then layout = "OVER" end
-    if force or state.layout ~= layout then
-      state.layout = layout
-      panel:ClearAllPoints()
-      if layout == "UNDER" then
-        panel:SetPoint("TOPLEFT", tooltip, "BOTTOMLEFT", 0, 0)
-      else
-        panel:SetPoint("BOTTOMLEFT", tooltip, "TOPLEFT", 0, 0)
-      end
+    local scale = tooltip:GetScale() or 1
+    local left, right, top, bottom = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop(), tooltip:GetBottom()
+    if not (left and right and top and bottom) then return end
+    local screenW, screenH = UIParent:GetWidth(), UIParent:GetHeight()
+    local free = (ShoppingSide(state, tooltip) == "RIGHT") and "LEFT" or "RIGHT"
+    local roomSide = (free == "LEFT") and (left * scale) or (screenW - right * scale)
+    local pw, ph = Width(panel), Height(panel)
+    local layout
+    if roomSide >= pw then
+      layout = "SIDE"
+    elseif bottom * scale >= ph then
+      layout = "UNDER"
+    elseif screenH - top * scale >= ph then
+      layout = "OVER"
+    else
+      layout = "SIDE"
+    end
+    local vert = "TOP"
+    if layout == "SIDE" and top * scale - ph < 0 then vert = "BOTTOM" end
+    local key = layout .. free .. vert
+    if not force and state.layout == key then return end
+    state.layout = key
+    panel:ClearAllPoints()
+    if layout == "UNDER" then
+      panel:SetPoint("TOPLEFT", tooltip, "BOTTOMLEFT", 0, 0)
+    elseif layout == "OVER" then
+      panel:SetPoint("BOTTOMLEFT", tooltip, "TOPLEFT", 0, 0)
+    elseif free == "RIGHT" then
+      panel:SetPoint(vert .. "LEFT", tooltip, vert .. "RIGHT", 0, 0)
+    else
+      panel:SetPoint(vert .. "RIGHT", tooltip, vert .. "LEFT", 0, 0)
     end
     return
   end
 
+  ReshowEquippedTips(state)
   local tips = {}
   if state.equippedTips then
     for n = 1, table.getn(state.equippedTips) do
@@ -510,22 +581,33 @@ end
 -- Following the tooltips
 ------------------------------------------------------------------------------------------------------
 
-local function Signature(tooltip)
+-- What the tooltip is showing: its first line, how many lines, and whether it is one of your equipped
+-- slots. The same signature twice in a row means nothing to redraw.
+local function Signature(state)
+  local tooltip = state.tooltip
   local first = getglobal(tooltip:GetName() .. "TextLeft1")
-  return (first and first:GetText() or "") .. "#" .. (tooltip:NumLines() or 0)
+  return (first and first:GetText() or "") .. "#" .. (tooltip:NumLines() or 0) .. "#" .. tostring(state.equippedSlot)
 end
 
 function ECA.UpdateTooltip(tooltip)
   local state = states[tooltip:GetName()]
   if not state or not ECA.char then return end
-  state.sig = Signature(tooltip)
-  state.shift, state.alt = IsShiftKeyDown(), IsAltKeyDown()
+  local sig = Signature(state)
+  local shift, alt = IsShiftKeyDown(), IsAltKeyDown()
   if state.hiddenAt and GetTime() - state.hiddenAt > 0.3 then state.plan = nil end
   state.hiddenAt = nil
-  if not ECA.db.enabled or not tooltip:IsShown() or (ECA.db.shiftOnly and not state.shift) then
+  state.hideAt = nil
+  if not ECA.db.enabled or not tooltip:IsShown() or (ECA.db.shiftOnly and not shift) then
     HidePanel(state)
     return
   end
+  -- The auction house and some addons set the same item again several times a second. Same item,
+  -- same panel: only its place is checked.
+  if state.sig == sig and state.shift == shift and state.alt == alt and state.panel and state.panel:IsShown() then
+    Anchor(state, false)
+    return
+  end
+  state.sig, state.shift, state.alt = sig, shift, alt
   local item = ECA.ParseTooltip(tooltip:GetName(), tooltip:NumLines(), true)
   if not item then
     HidePanel(state)
@@ -536,12 +618,14 @@ end
 
 function ECA.RefreshPanels()
   for _, state in pairs(states) do
+    state.sig = nil
     if state.tooltip:IsVisible() then
       ECA.Safe(ECA.UpdateTooltip, state.tooltip)
     else
       HidePanel(state)
     end
   end
+  ECA.ApplyLook()
 end
 
 local function HookMethod(tooltip, method)
@@ -561,9 +645,29 @@ local function HookMethod(tooltip, method)
   end
 end
 
-local function Follow(tooltip, index)
-  if not tooltip or states[tooltip:GetName()] then return end
-  local state = { tooltip = tooltip, index = index }
+local nextIndex = 0
+
+-- The tooltip hid: the panel goes a moment later, unless the tooltip is back by then with the same item.
+-- The auction house hides and refills its tooltip on every list refresh; hiding the panel each time
+-- made it blink.
+local hider = CreateFrame("Frame")
+hider:SetScript("OnUpdate", function()
+  for _, state in pairs(states) do
+    if state.hideAt and GetTime() - state.hideAt > 0.15 then
+      state.hideAt = nil
+      if not state.tooltip:IsShown() then
+        state.equippedSlot = nil
+        state.hiddenAt = GetTime()
+        HidePanel(state)
+      end
+    end
+  end
+end)
+
+local function Follow(tooltip)
+  if not tooltip or not tooltip.GetName or not tooltip:GetName() or states[tooltip:GetName()] then return end
+  nextIndex = nextIndex + 1
+  local state = { tooltip = tooltip, index = nextIndex }
   states[tooltip:GetName()] = state
 
   for i = 1, table.getn(SET_METHODS) do
@@ -573,18 +677,19 @@ local function Follow(tooltip, index)
   -- A child frame is shown and hidden with the tooltip, which catches every way a tooltip can be filled.
   local watcher = CreateFrame("Frame", nil, tooltip)
   watcher.elapsed = 0
-  watcher:SetScript("OnShow", function() ECA.Safe(ECA.UpdateTooltip, state.tooltip) end)
+  watcher:SetScript("OnShow", function()
+    state.hideAt = nil
+    ECA.Safe(ECA.UpdateTooltip, state.tooltip)
+  end)
   watcher:SetScript("OnHide", function()
-    state.equippedSlot = nil
-    state.hiddenAt = GetTime()
-    HidePanel(state)
+    if not state.hideAt then state.hideAt = GetTime() end
   end)
   watcher:SetScript("OnUpdate", function()
     this.elapsed = this.elapsed + arg1
     if this.elapsed < 0.15 then return end
     this.elapsed = 0
     if not ECA.char then return end
-    if state.sig ~= Signature(state.tooltip) or state.shift ~= IsShiftKeyDown() or state.alt ~= IsAltKeyDown() then
+    if state.sig ~= Signature(state) or state.shift ~= IsShiftKeyDown() or state.alt ~= IsAltKeyDown() then
       ECA.Safe(ECA.UpdateTooltip, state.tooltip)
     else
       Anchor(state, false)
@@ -592,7 +697,15 @@ local function Follow(tooltip, index)
   end)
 end
 
+-- Item tooltips that other addons draw themselves, followed when they exist. Atlas-CFM (Atlas-TW) shows
+-- its loot browser's items in the first two; the old AtlasLoot in the other two.
+local OTHER_TOOLTIPS = { "AtlasCFMLootTooltip", "AtlasCFMLootTooltip2", "AtlasLootTooltip", "AtlasLootTooltip2" }
+
 function ECA.InstallHooks()
-  Follow(GameTooltip, 1)
-  Follow(ItemRefTooltip, 2)
+  Follow(GameTooltip)
+  Follow(ItemRefTooltip)
+  for i = 1, table.getn(OTHER_TOOLTIPS) do
+    local tip = getglobal(OTHER_TOOLTIPS[i])
+    if type(tip) == "table" and tip.SetHyperlink and tip.NumLines then Follow(tip) end
+  end
 end

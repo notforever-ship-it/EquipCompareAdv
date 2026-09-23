@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.3.1"
+ECA.VERSION = "1.4.0"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -19,6 +19,7 @@ local DEFAULTS = {
   ignoreEnchants = false,  -- compare bare items, leaving enchants out
   levelingMix = true,      -- below 60, healers and tanks also count their class's damage stats
   capMode = "auto",        -- hit caps: auto / raid / leveling / off
+  darkBackground = true,   -- a dark layer behind the panels; off gives the game's own tooltip look
 }
 
 ECA.DETAIL_NAMES = { "Compact", "Normal", "Detailed" }
@@ -153,6 +154,7 @@ local function Help()
     "/eca roles" .. GREY .. "  show or hide the verdict for each role your class can fill" .. END,
     "/eca leveling" .. GREY .. "  below 60, healers and tanks also count damage stats (on by default)" .. END,
     "/eca enchants" .. GREY .. "  count or ignore enchants" .. END,
+    "/eca dark" .. GREY .. "  dark background behind the panels, or the game's own tooltip look" .. END,
     "/eca gear" .. GREY .. "  list what you have equipped, with scores" .. END,
     "/eca weights" .. GREY .. "  list the stat weights;  " .. END .. "/eca weight <STAT> <n>" .. GREY .. "  change one;  " .. END .. "/eca weight reset",
     "/eca hit <n>" .. GREY .. " and " .. END .. "/eca spellhit <n>" .. GREY .. "  extra hit % from buffs or talents the addon can't see" .. END,
@@ -213,6 +215,10 @@ local function Slash(msg)
     ECA.db.ignoreEnchants = not ECA.db.ignoreEnchants
     ECA.SettingsChanged()
     ECA.Print(ECA.db.ignoreEnchants and "Enchants are ignored: bare items are compared." or "Enchants are counted.")
+  elseif cmd == "dark" or cmd == "blizz" then
+    ECA.db.darkBackground = not ECA.db.darkBackground
+    ECA.SettingsChanged()
+    ECA.Print(ECA.db.darkBackground and "Dark background behind the panels." or "The game's own tooltip look.")
   elseif cmd == "gear" then
     ECA.PrintGear()
   elseif cmd == "weights" then
@@ -256,6 +262,7 @@ events:SetScript("OnEvent", function()
   elseif not ECA.char then
     return
   elseif event == "PLAYER_ENTERING_WORLD" then
+    ECA.Safe(ECA.InstallHooks)   -- other addons' tooltips may only exist by now
     ECA.SettingsChanged()
     if not ECA.greeted then
       ECA.greeted = true

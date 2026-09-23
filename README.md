@@ -75,7 +75,8 @@ Fit for your spec:                         100%
   - **Healing power**: the change in bonus healing, and roughly what that is per second of casting.
   - **Health** and **Mana**, from Stamina and Intellect.
 - **By role** (left out when every role agrees, as with plain armor) gives a second opinion for each role your class can fill: the same swap judged purely as a tank, as a healer and as damage, without the leveling mix. A warrior sees two lines, a paladin three, a druid four; rogues, hunters, mages and warlocks only deal damage, so they get none. Switch it off in `/eca` or with `/eca roles`.
-- The **equipped item's tooltip** sits between the item you hover and the panel, under a "Currently Equipped" tab. Rings, trinkets and weapons can show two. On the auction house the game already shows its own, so the addon leaves those alone and puts the panel underneath.
+- The **equipped item's tooltip** sits between the item you hover and the panel, under a "Currently Equipped" tab. Rings, trinkets and weapons can show two. On the auction house the game already shows its own, so the addon leaves those alone and puts the panel on the free side of the tooltip, or under or over it when that fits better.
+- The panel follows the game's tooltips, chat links, and the tooltips of the **Atlas-CFM (Atlas-TW)** and AtlasLoot loot browsers.
 - **Rings, trinkets and one-handed weapons** are compared with both slots, and the panel says which one to swap. The better swap is shown in full and the other in two lines; hold Alt to see both in full.
 - **Two-handers** are compared with your main hand and off hand together. An off-hand weapon's damage counts half, as it does in game.
 - **Hovering something you're wearing** shows its score and your total gear score instead.
@@ -187,6 +188,13 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 - Leveling healers and tanks now get their class's damage spec mixed into the score, fading out by level 60, so a better weapon reads as an upgrade on a level 11 Holy paladin. The header shows "+ leveling".
 - When neither item has anything your spec counts, the verdict says so instead of "sidegrade".
 
+**1.4.0**
+
+- No more blinking at the auction house: the panel keeps its place across the list refreshes that hide and refill the tooltip, and only redraws when the item changes. Settles aux and other addons that set the same tooltip several times a second, too.
+- No more overlapping when the game's compare tooltips are up: the panel takes the free side, or goes under or over the tooltip only when that really fits.
+- Follows the Atlas-CFM (Atlas-TW) and AtlasLoot loot browser tooltips.
+- "Dark background behind the panels" is now a switch in `/eca` (or `/eca dark`). Untick it for the game's own tooltip look.
+
 **1.2.0**
 
 - New **Overall if you swap** block at the top of every comparison: the change in damage per second, damage reduction, healing power, spell damage, health and mana, worked out from your character's current numbers. Strength, Agility and the rest are already folded in.
@@ -195,7 +203,7 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 **1.1.0**
 
 - The equipped item's full tooltip now shows next to the item you hover, like the game's own compare tooltips, with the comparison panel after it. Switch it off in `/eca` or with `/eca equipped`.
-- The panel and the equipped tooltips have a darker background, so they stay readable over your bags.
+- The panel and the equipped tooltips have a darker background, so they stay readable over your bags (a switch since 1.4.0).
 - Fairer scores while leveling: crit, hit and the other percent stats are worth less below level 60, and Agility no longer gets inflated at low level.
 - "Made for" no longer calls plain Agility or Strength items tank gear.
 
