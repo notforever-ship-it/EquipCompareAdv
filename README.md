@@ -168,6 +168,11 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 
 ## Changes
 
+**1.4.1**
+
+- Small screens and aux: when the panel has no room next to the tooltip and the game's compare tooltips, it now goes past the compare tooltips like the rest of the row, or under or over the tooltip, and when even that doesn't fit it is drawn shorter (the compact view) instead of being clamped on top of the other frames. Away from the auction house the tooltips of what you're wearing are dropped first, then the panel shortens. Hold Alt for the full panel any time.
+- The compare tooltips at aux blink with every list refresh; the panel's place is now decided once per item, so it no longer jumps with them.
+
 **1.3.1**
 
 - Fixed the panel and equipped tooltips jumping between two spots when the hovered tooltip was near the middle of the screen. The layout is now worked out once per item and kept, and tops line up like the game's own compare tooltips unless that would run off the screen.

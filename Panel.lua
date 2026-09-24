@@ -132,23 +132,26 @@ local function ReshowEquippedTips(state)
 end
 
 -- Are the game's own compare tooltips up? At the auction house they come and go a frame apart from the
--- main tooltip on every list refresh, so "seen within the last third of a second" counts as up. Without
--- that the row jumped between two layouts several times a second, which looked like blinking.
+-- main tooltip on every list refresh, so "seen within the last half second" counts as up. Without that
+-- the row jumped between two layouts several times a second, which looked like blinking.
 local function ShoppingUp(state)
   if (ShoppingTooltip1 and ShoppingTooltip1:IsVisible()) or (ShoppingTooltip2 and ShoppingTooltip2:IsVisible()) then
     state.shoppingSeen = GetTime()
     return true
   end
-  return state.shoppingSeen ~= nil and GetTime() - state.shoppingSeen < 0.3
+  return state.shoppingSeen ~= nil and GetTime() - state.shoppingSeen < 0.5
 end
 
--- Which side of the tooltip the game's compare tooltips sit on.
-local function ShoppingSide(state, tooltip)
-  local s = ShoppingTooltip1
-  if s and s:IsVisible() and s:GetLeft() and tooltip:GetLeft() then
-    state.shoppingSide = (s:GetLeft() < tooltip:GetLeft()) and "LEFT" or "RIGHT"
-  end
-  return state.shoppingSide or "RIGHT"
+-- Room around the tooltip, in screen pixels: to its left and right, under it and over it.
+local function Room(tooltip)
+  local scale = tooltip:GetScale() or 1
+  local left, right, top, bottom = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop(), tooltip:GetBottom()
+  if not (left and right and top and bottom) then return nil end
+  return {
+    LEFT = left * scale, RIGHT = UIParent:GetWidth() - right * scale,
+    UNDER = bottom * scale, OVER = UIParent:GetHeight() - top * scale,
+    top = top * scale,
+  }
 end
 
 local function Width(frame)
@@ -159,123 +162,173 @@ local function Height(frame)
   return (frame:GetHeight() or 0) * (frame:GetScale() or 1)
 end
 
+-- The game's compare tooltips: the side of the tooltip they sit on and their width together.
+-- Remembered, because at aux they come and go with every list refresh.
+local function ShoppingRow(state, tooltip)
+  local s1, s2 = ShoppingTooltip1, ShoppingTooltip2
+  if s1 and s1:IsVisible() and s1:GetLeft() and tooltip:GetLeft() then
+    state.shoppingSide = (s1:GetLeft() < tooltip:GetLeft()) and "LEFT" or "RIGHT"
+    state.shoppingWidth = Width(s1)
+    if s2 and s2:IsVisible() then state.shoppingWidth = state.shoppingWidth + Width(s2) end
+  end
+  return state.shoppingSide or "RIGHT", state.shoppingWidth or 0
+end
+
+-- frame goes next to anchor, on its left or right, tops or bottoms lined up. gap is extra room between.
+local function Beside(frame, anchor, where, vert, gap)
+  frame:ClearAllPoints()
+  gap = (gap or 0) / (frame:GetScale() or 1)
+  if where == "RIGHT" then
+    frame:SetPoint(vert .. "LEFT", anchor, vert .. "RIGHT", gap, 0)
+  else
+    frame:SetPoint(vert .. "RIGHT", anchor, vert .. "LEFT", -gap, 0)
+  end
+end
+
+local function TooltipName(tooltip)
+  local first = getglobal(tooltip:GetName() .. "TextLeft1")
+  return first and first:GetText() or ""
+end
+
+-- Where the panel goes while the game's own compare tooltips are up (the auction house, aux): past
+-- them on their side, like the rest of the row, else on the other side, else under or over the tooltip.
+-- Nothing fits at all: a shorter panel is drawn (state.wantCompact) and this runs again. The choice is
+-- made once per item and kept, so the compare tooltips blinking can't move the panel.
+local function AnchorWithShopping(state, force)
+  local panel, tooltip = state.panel, state.tooltip
+  HideEquippedTips(state)
+  local room = Room(tooltip)
+  if not room then return end
+  local shopSide, shopWidth = ShoppingRow(state, tooltip)
+  local free = (shopSide == "RIGHT") and "LEFT" or "RIGHT"
+  local pw, ph = Width(panel), Height(panel)
+  local name = TooltipName(tooltip)
+
+  local plan = state.shopPlan
+  if plan and (plan.name ~= name or plan.compact ~= state.compact) then plan = nil end
+  if not plan or force then
+    plan = { name = name, compact = state.compact, width = shopWidth }
+    if room[shopSide] >= shopWidth + pw then
+      plan.layout = "AFTER"
+    elseif room[free] >= pw then
+      plan.layout = "SIDE"
+    elseif room.UNDER >= ph then
+      plan.layout = "UNDER"
+    elseif room.OVER >= ph then
+      plan.layout = "OVER"
+    elseif not state.compact then
+      state.wantCompact = true
+      return
+    elseif room[shopSide] - shopWidth >= room[free] then
+      plan.layout = "AFTER"
+    else
+      plan.layout = "SIDE"
+    end
+    plan.vert = "TOP"
+    if (plan.layout == "AFTER" or plan.layout == "SIDE") and room.top - ph < 0 then plan.vert = "BOTTOM" end
+    state.shopPlan = plan
+  end
+
+  local key = "shop" .. plan.layout .. shopSide .. plan.vert .. math.floor(plan.width)
+  if not force and state.layout == key then return end
+  state.layout = key
+  if plan.layout == "UNDER" then
+    panel:ClearAllPoints()
+    panel:SetPoint("TOPLEFT", tooltip, "BOTTOMLEFT", 0, 0)
+  elseif plan.layout == "OVER" then
+    panel:ClearAllPoints()
+    panel:SetPoint("BOTTOMLEFT", tooltip, "TOPLEFT", 0, 0)
+  elseif plan.layout == "AFTER" then
+    -- anchored to the tooltip, not to the compare tooltips, which may be hidden at this instant
+    Beside(panel, tooltip, shopSide, plan.vert, plan.width)
+  else
+    Beside(panel, tooltip, free, plan.vert)
+  end
+end
+
 -- Tooltip, then what you're wearing, then the panel, in a row on whichever side has room. If the row is
--- too long for one side the panel takes the other.
--- When the game's own compare tooltips are up (the auction house) they take one side, so the panel goes
--- on the other side, or under or over the tooltip when that fits better. Nothing is ever put where it
--- cannot fit and then clamped onto the tooltip, which is what used to overlap at the auction house.
+-- too long for one side the panel takes the other; too long for the screen, and the tooltips of what
+-- you're wearing go, then the panel is drawn shorter. The layout is worked out once for the item under
+-- the mouse and then kept: other addons add lines to the tooltip a moment after it appears, and the
+-- game refreshes some tooltips several times a second, so deciding again each time made the frames
+-- jump between two spots when the numbers were close.
 local function Anchor(state, force)
   local panel, tooltip = state.panel, state.tooltip
   if not panel or not panel:IsShown() then return end
-
   if ShoppingUp(state) then
-    HideEquippedTips(state)
-    local scale = tooltip:GetScale() or 1
-    local left, right, top, bottom = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop(), tooltip:GetBottom()
-    if not (left and right and top and bottom) then return end
-    local screenW, screenH = UIParent:GetWidth(), UIParent:GetHeight()
-    local free = (ShoppingSide(state, tooltip) == "RIGHT") and "LEFT" or "RIGHT"
-    local roomSide = (free == "LEFT") and (left * scale) or (screenW - right * scale)
-    local pw, ph = Width(panel), Height(panel)
-    local layout
-    if roomSide >= pw then
-      layout = "SIDE"
-    elseif bottom * scale >= ph then
-      layout = "UNDER"
-    elseif screenH - top * scale >= ph then
-      layout = "OVER"
-    else
-      layout = "SIDE"
-    end
-    local vert = "TOP"
-    if layout == "SIDE" and top * scale - ph < 0 then vert = "BOTTOM" end
-    local key = layout .. free .. vert
-    if not force and state.layout == key then return end
-    state.layout = key
-    panel:ClearAllPoints()
-    if layout == "UNDER" then
-      panel:SetPoint("TOPLEFT", tooltip, "BOTTOMLEFT", 0, 0)
-    elseif layout == "OVER" then
-      panel:SetPoint("BOTTOMLEFT", tooltip, "TOPLEFT", 0, 0)
-    elseif free == "RIGHT" then
-      panel:SetPoint(vert .. "LEFT", tooltip, vert .. "RIGHT", 0, 0)
-    else
-      panel:SetPoint(vert .. "RIGHT", tooltip, vert .. "LEFT", 0, 0)
-    end
+    AnchorWithShopping(state, force)
     return
   end
 
-  ReshowEquippedTips(state)
-  local tips = {}
-  if state.equippedTips then
-    for n = 1, table.getn(state.equippedTips) do
-      if state.equippedTips[n]:IsShown() then table.insert(tips, state.equippedTips[n]) end
-    end
-  end
-
-  -- The layout is worked out once for the item under the mouse and then kept. Other addons add lines to
-  -- the tooltip a moment after it appears, and the game refreshes some tooltips several times a second;
-  -- deciding again each time made the frames jump between two spots when the numbers were close.
-  local first = getglobal(tooltip:GetName() .. "TextLeft1")
-  local name = first and first:GetText() or ""
+  local name = TooltipName(tooltip)
+  local count = state.equippedCount or 0
   local plan = state.plan
-  if plan and (plan.name ~= name or plan.tips ~= table.getn(tips) or plan.alt ~= state.alt) then plan = nil end
+  if plan and (plan.name ~= name or plan.count ~= count or plan.alt ~= state.alt or plan.compact ~= state.compact) then
+    plan = nil
+  end
   if not plan then
-    local left, right, top = tooltip:GetLeft(), tooltip:GetRight(), tooltip:GetTop()
-    if left and right and top then
-      local scale = tooltip:GetScale() or 1
-      local screenW = UIParent:GetWidth()
-      local roomRight, roomLeft = screenW - right * scale, left * scale
-      local tipsWidth, tipsHeight, panelWidth = 0, 0, Width(panel)
-      for n = 1, table.getn(tips) do
-        tipsWidth = tipsWidth + Width(tips[n])
-        if Height(tips[n]) > tipsHeight then tipsHeight = Height(tips[n]) end
-      end
-
-      plan = { name = name, tips = table.getn(tips), alt = state.alt }
-      local room = { RIGHT = roomRight, LEFT = roomLeft }
-      local big, small = "LEFT", "RIGHT"
-      if roomRight >= roomLeft then big, small = "RIGHT", "LEFT" end
-      -- the right is where the game puts things, so it wins whenever the whole row fits there
-      if roomRight >= tipsWidth + panelWidth then
-        plan.side, plan.panelSide = "RIGHT", "RIGHT"
-      elseif room[big] >= tipsWidth + panelWidth then
-        plan.side, plan.panelSide = big, big
-      elseif room[big] >= tipsWidth and room[small] >= panelWidth then
-        plan.side, plan.panelSide = big, small
-      elseif room[small] >= tipsWidth and room[big] >= panelWidth then
-        plan.side, plan.panelSide = small, big
-      else
-        plan.side, plan.panelSide = big, big
-      end
-      -- tops line up, like the game's own compare tooltips, unless that would run off the bottom
-      plan.tipVert, plan.panelVert = "TOP", "TOP"
-      if top * scale - tipsHeight < 0 then plan.tipVert = "BOTTOM" end
-      if top * scale - Height(panel) < 0 then plan.panelVert = "BOTTOM" end
-      state.plan = plan
+    local room = Room(tooltip)
+    if not room then return end
+    local tipsWidth, tipsHeight = 0, 0
+    for n = 1, count do
+      local tip = state.equippedTips[n]
+      tipsWidth = tipsWidth + Width(tip)
+      if Height(tip) > tipsHeight then tipsHeight = Height(tip) end
     end
+    local pw, ph = Width(panel), Height(panel)
+    local big, small = "LEFT", "RIGHT"
+    if room.RIGHT >= room.LEFT then big, small = "RIGHT", "LEFT" end
+    -- the right is where the game puts things, so it wins whenever the whole row fits there
+    local function Choose(tw)
+      if room.RIGHT >= tw + pw then return "RIGHT", "RIGHT" end
+      if room[big] >= tw + pw then return big, big end
+      if room[big] >= tw and room[small] >= pw then return big, small end
+      if room[small] >= tw and room[big] >= pw then return small, big end
+      return nil
+    end
+    plan = { name = name, count = count, alt = state.alt, compact = state.compact, dropTips = false }
+    local side, panelSide = Choose(tipsWidth)
+    if not side and tipsWidth > 0 then
+      plan.dropTips = true
+      tipsWidth, tipsHeight = 0, 0
+      side, panelSide = Choose(0)
+    end
+    if not side then
+      if not state.compact then
+        state.wantCompact = true
+        return
+      end
+      side, panelSide = big, big
+    end
+    plan.side, plan.panelSide = side, panelSide
+    -- tops line up, like the game's own compare tooltips, unless that would run off the bottom
+    plan.tipVert, plan.panelVert = "TOP", "TOP"
+    if room.top - tipsHeight < 0 then plan.tipVert = "BOTTOM" end
+    if room.top - ph < 0 then plan.panelVert = "BOTTOM" end
+    state.plan = plan
   end
 
-  local side, panelSide, tipVert, panelVert = "LEFT", "LEFT", "TOP", "TOP"
-  if plan then side, panelSide, tipVert, panelVert = plan.side, plan.panelSide, plan.tipVert, plan.panelVert end
-  local layout = side .. panelSide .. tipVert .. panelVert .. table.getn(tips)
+  local tips = {}
+  if plan.dropTips then
+    HideEquippedTips(state)
+  else
+    ReshowEquippedTips(state)
+    for n = 1, count do table.insert(tips, state.equippedTips[n]) end
+  end
+
+  local layout = plan.side .. plan.panelSide .. plan.tipVert .. plan.panelVert .. table.getn(tips)
   if not force and state.layout == layout then return end
   state.layout = layout
-
-  local function Beside(frame, anchor, where, vert)
-    frame:ClearAllPoints()
-    if where == "RIGHT" then
-      frame:SetPoint(vert .. "LEFT", anchor, vert .. "RIGHT", 0, 0)
-    else
-      frame:SetPoint(vert .. "RIGHT", anchor, vert .. "LEFT", 0, 0)
-    end
-  end
   local last = tooltip
   for n = 1, table.getn(tips) do
-    Beside(tips[n], last, side, tipVert)
+    Beside(tips[n], last, plan.side, plan.tipVert)
     last = tips[n]
   end
-  if panelSide == side then Beside(panel, last, side, panelVert) else Beside(panel, tooltip, panelSide, panelVert) end
+  if plan.panelSide == plan.side then
+    Beside(panel, last, plan.side, plan.panelVert)
+  else
+    Beside(panel, tooltip, plan.panelSide, plan.panelVert)
+  end
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -490,7 +543,11 @@ local function Render(state, item)
   local panel = GetPanel(state)
   local tooltip = state.tooltip
   local detail = ECA.db.detail
-  if IsAltKeyDown() then detail = 3 end
+  if IsAltKeyDown() then
+    detail = 3
+  elseif state.compact then
+    detail = 1   -- the full panel had no room on screen
+  end
 
   panel:SetOwner(UIParent, "ANCHOR_NONE")
   panel:SetScale(tooltip:GetScale() or 1)
@@ -567,6 +624,8 @@ local function Render(state, item)
     for i = 1, table.getn(caps) do panel:AddLine(caps[i], 0.62, 0.62, 0.62) end
   elseif detail == 2 then
     panel:AddLine("Hold Alt for more detail", 0.45, 0.45, 0.45)
+  elseif state.compact then
+    panel:AddLine("Shortened to fit the screen. Hold Alt for the full panel.", 0.45, 0.45, 0.45)
   end
   if detail >= 3 then
     panel:AddLine("Made by stealthzi   v" .. ECA.VERSION, 0.45, 0.45, 0.45)
@@ -575,6 +634,14 @@ local function Render(state, item)
   panel:Show()
   ShowEquippedTips(state, equippedSlots)
   Anchor(state, true)
+  -- Nowhere to put the full panel: draw it again, shorter. Once; Alt shows the full one anyway.
+  if state.wantCompact then
+    state.wantCompact = nil
+    if not state.compact and not IsAltKeyDown() then
+      state.compact = true
+      Render(state, item)
+    end
+  end
 end
 
 ------------------------------------------------------------------------------------------------------
@@ -594,7 +661,15 @@ function ECA.UpdateTooltip(tooltip)
   if not state or not ECA.char then return end
   local sig = Signature(state)
   local shift, alt = IsShiftKeyDown(), IsAltKeyDown()
-  if state.hiddenAt and GetTime() - state.hiddenAt > 0.3 then state.plan = nil end
+  if state.hiddenAt and GetTime() - state.hiddenAt > 0.3 then
+    state.plan = nil
+    state.shopPlan = nil
+  end
+  local name = TooltipName(tooltip)
+  if state.compactName ~= name then
+    state.compactName = name
+    state.compact = nil
+  end
   state.hiddenAt = nil
   state.hideAt = nil
   if not ECA.db.enabled or not tooltip:IsShown() or (ECA.db.shiftOnly and not shift) then
