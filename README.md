@@ -168,6 +168,10 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 
 ## Changes
 
+**1.4.2**
+
+- Guns, crossbows and wands get a comparison again. On the Turtle client their tooltip line reads just "Gun" (or "Crossbow", "Wand") with no "Ranged" next to it, and the addon only knew the slot by that word.
+
 **1.4.1**
 
 - Small screens and aux: when the panel has no room next to the tooltip and the game's compare tooltips, it now goes past the compare tooltips like the rest of the row, or under or over the tooltip, and when even that doesn't fit it is drawn shorter (the compact view) instead of being clamped on top of the other frames. Away from the auction house the tooltips of what you're wearing are dropped first, then the panel shortens. Hold Alt for the full panel any time.

@@ -87,7 +87,9 @@ end
 -- What the tooltip's slot line means: a single inventory slot number, or a kind that needs thought.
 local SLOT_BY_TEXT = {}
 local function Slot(globalName, fallback, kind)
-  SLOT_BY_TEXT[getglobal(globalName) or fallback] = kind
+  local text = getglobal(globalName)
+  if type(text) ~= "string" or text == "" then text = fallback end
+  SLOT_BY_TEXT[text] = kind
 end
 Slot("INVTYPE_HEAD", "Head", 1)
 Slot("INVTYPE_NECK", "Neck", 2)
@@ -120,6 +122,11 @@ ECA.SLOT_LABEL = {
 }
 -- Every slot that counts towards the gear score (shirt and tabard don't).
 ECA.GEAR_SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
+
+-- Ranged weapon and relic types. Some clients leave the slot word out for these, so the tooltip line
+-- reads just "Gun" or "Wand" with nothing next to it (the bow still says "Ranged  Bow").
+local RANGED_TYPES = { Bow = true, Gun = true, Crossbow = true, Wand = true, Thrown = true,
+  Libram = true, Idol = true, Totem = true }
 
 -- Armor and weapon types, as the tooltip shows them on the right of the slot line.
 local SUBTYPES = {
@@ -305,15 +312,19 @@ function ECA.ParseTooltip(tipName, numLines, live)
   if not name or name == "" or numLines < 2 then return nil end
 
   -- The slot line sits in the first few lines: name, binding, unique, then the slot.
-  local kind, slotLine
+  local kind, slotLine, leftType
   local limit = numLines
   if limit > 7 then limit = 7 end
   for i = 2, limit do
     local fs = getglobal(tipName .. "TextLeft" .. i)
     local text = fs and fs:GetText()
-    if text then
+    if text and text ~= "" then
       if SLOT_BY_TEXT[text] then
         kind, slotLine = SLOT_BY_TEXT[text], i
+        break
+      end
+      if RANGED_TYPES[text] then
+        kind, slotLine, leftType = "RANGED", i, text
         break
       end
       if string.find(text, "^Requires") or string.find(text, "^Use:") or string.find(text, "^Equip:") then break end
@@ -330,6 +341,7 @@ function ECA.ParseTooltip(tipName, numLines, live)
     local sub = right:GetText()
     if sub and SUBTYPES[sub] then item.subType, item.subKind = sub, SUBTYPES[sub] end
   end
+  if not item.subType and leftType then item.subType, item.subKind = leftType, SUBTYPES[leftType] end
   -- Rings, trinkets and necklaces have no type; anything left over there is stale text.
   if kind == "FINGER" or kind == "TRINKET" or kind == 2 then item.subType, item.subKind = nil, nil end
 

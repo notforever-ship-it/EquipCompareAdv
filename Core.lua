@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.4.1"
+ECA.VERSION = "1.4.2"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
