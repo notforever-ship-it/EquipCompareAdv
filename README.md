@@ -168,6 +168,11 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 
 ## Changes
 
+**1.4.3**
+
+- `/eca debug` now also prints, line by line, the last item tooltip the addon could make nothing of, so a "no panel for this item" report can include exactly what the tooltip said. `/eca version` says which version you have.
+- The slot line is matched after trimming spaces and colour codes, whatever its case.
+
 **1.4.2**
 
 - Guns, crossbows and wands get a comparison again. On the Turtle client their tooltip line reads just "Gun" (or "Crossbow", "Wand") with no "Ranged" next to it, and the addon only knew the slot by that word.

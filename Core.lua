@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.4.2"
+ECA.VERSION = "1.4.3"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -234,8 +234,14 @@ local function Slash(msg)
       ECA.SettingsChanged()
       ECA.Print("Extra " .. (cmd == "hit" and "melee and ranged" or "spell") .. " hit set to " .. n .. "%.")
     end
+  elseif cmd == "version" then
+    ECA.Print("v" .. ECA.VERSION)
   elseif cmd == "debug" then
-    ECA.Print("Last error: " .. (ECA.lastError or "none"))
+    ECA.Print("v" .. ECA.VERSION .. ". Last error: " .. (ECA.lastError or "none"))
+    if ECA.lastRejected then
+      ECA.Print("The last item tooltip that got no panel, line by line (left | right):")
+      for i = 1, table.getn(ECA.lastRejected) do DEFAULT_CHAT_FRAME:AddMessage("  " .. ECA.lastRejected[i]) end
+    end
   else
     Help()
   end

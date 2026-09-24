@@ -2,7 +2,7 @@
 ## Title: Equip Compare Adv
 ## Notes: Hover an item to see it against what you have equipped: every stat gained and lost, a score for your spec, a plain verdict, and who the item suits. /eca
 ## Author: stealthzi
-## Version: 1.4.2
+## Version: 1.4.3
 ## SavedVariables: EquipCompareAdvDB
 
 Core.lua

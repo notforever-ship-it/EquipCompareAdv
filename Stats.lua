@@ -125,8 +125,11 @@ ECA.GEAR_SLOTS = { 1, 2, 3, 15, 5, 9, 10, 6, 7, 8, 11, 12, 13, 14, 16, 17, 18 }
 
 -- Ranged weapon and relic types. Some clients leave the slot word out for these, so the tooltip line
 -- reads just "Gun" or "Wand" with nothing next to it (the bow still says "Ranged  Bow").
-local RANGED_TYPES = { Bow = true, Gun = true, Crossbow = true, Wand = true, Thrown = true,
-  Libram = true, Idol = true, Totem = true }
+local RANGED_TYPES = { bow = "Bow", gun = "Gun", crossbow = "Crossbow", wand = "Wand", thrown = "Thrown",
+  libram = "Libram", idol = "Idol", totem = "Totem" }
+
+-- Words that say a tooltip is an item's, so /eca debug can show the last item that got no panel.
+local ITEM_WORDS = { "Durability", "Binds", "Requires Level", "Damage", "Armor" }
 
 -- Armor and weapon types, as the tooltip shows them on the right of the slot line.
 local SUBTYPES = {
@@ -303,6 +306,24 @@ local function IsGreen(r, g, b)
   return r and r < 0.15 and g > 0.9 and b < 0.15
 end
 
+-- The lines of the last item tooltip the addon could make nothing of, for /eca debug.
+function ECA.RememberRejected(tipName, numLines)
+  local lines, isItem = {}, false
+  local limit = numLines
+  if limit > 8 then limit = 8 end
+  for i = 1, limit do
+    local l = getglobal(tipName .. "TextLeft" .. i)
+    local r = getglobal(tipName .. "TextRight" .. i)
+    local lt = (l and l:GetText()) or ""
+    local rt = (r and r:IsShown() and r:GetText()) or ""
+    for w = 1, table.getn(ITEM_WORDS) do
+      if string.find(lt, ITEM_WORDS[w], 1, true) then isItem = true end
+    end
+    table.insert(lines, i .. ": " .. lt .. ((rt ~= "") and ("   |   " .. rt) or ""))
+  end
+  if isItem then ECA.lastRejected = lines end
+end
+
 -- Read an item out of a tooltip that is already filled in. 'live' is true for a tooltip on screen,
 -- where red text (can't use it) is worth looking for.
 -- Returns nil when the tooltip isn't showing something you can equip.
@@ -317,20 +338,24 @@ function ECA.ParseTooltip(tipName, numLines, live)
   if limit > 7 then limit = 7 end
   for i = 2, limit do
     local fs = getglobal(tipName .. "TextLeft" .. i)
-    local text = fs and fs:GetText()
+    local raw = fs and fs:GetText()
+    local text = raw and Trim(StripColors(raw))
     if text and text ~= "" then
       if SLOT_BY_TEXT[text] then
         kind, slotLine = SLOT_BY_TEXT[text], i
         break
       end
-      if RANGED_TYPES[text] then
-        kind, slotLine, leftType = "RANGED", i, text
+      if RANGED_TYPES[string.lower(text)] then
+        kind, slotLine, leftType = "RANGED", i, RANGED_TYPES[string.lower(text)]
         break
       end
       if string.find(text, "^Requires") or string.find(text, "^Use:") or string.find(text, "^Equip:") then break end
     end
   end
-  if not kind then return nil end
+  if not kind then
+    if live then ECA.RememberRejected(tipName, numLines) end
+    return nil
+  end
 
   local item = { name = name, kind = kind, stats = {}, enchantStats = {}, extras = {} }
   if first.GetTextColor then item.r, item.g, item.b = first:GetTextColor() end
