@@ -72,7 +72,8 @@ ECA.SPECS = {
   WARRIOR = {
     { key = "arms", name = "Arms", role = "melee", tabs = { 1 }, noShield = true, w = Melee({ CRIT = 30, HIT = 30 }), slowMH = true },
     { key = "fury", name = "Fury", role = "melee", tabs = { 2 }, noShield = true, w = Melee({ CRIT = 32, HIT = 30, HASTE = 21 }), slowMH = true },
-    { key = "prot", name = "Protection", role = "tank", tabs = { 3 }, no2H = true, w = Tank() },
+    -- OctoWow: Shield Slam's damage is modified by your shield block value, so it is worth more here.
+    { key = "prot", name = "Protection", role = "tank", tabs = { 3 }, no2H = true, w = Tank({ BLOCKVALUE = 0.8 }) },
   },
   PALADIN = {
     { key = "holy", name = "Holy", role = "healer", tabs = { 1 }, spirit = 0.1,
@@ -92,7 +93,11 @@ ECA.SPECS = {
       w = Melee({ CRIT = 28, HIT = 28, HASTE = 20, WEAPONSKILL = 12 }) },
   },
   PRIEST = {
-    { key = "holy", name = "Holy / Discipline", role = "healer", tabs = { 1, 2 }, spirit = 0.35, wand = true,
+    -- OctoWow: Discipline is a damage tree (Chastise, Enlighten, Starshards, Searing Shot), so it
+    -- scores like a Holy-damage caster; vanilla's "Holy / Discipline" healer is Holy alone.
+    { key = "disc", name = "Discipline", role = "caster", tabs = { 1 }, spirit = 0.3, wand = true,
+      w = Caster({ HOLYDMG = 1, SHADOWDMG = 0.1, SPELLCRIT = 8, MP5 = 1.2, MANA = 0.03 }) },
+    { key = "holy", name = "Holy", role = "healer", tabs = { 2 }, spirit = 0.35, wand = true,
       w = Healer() },
     { key = "shadow", name = "Shadow", role = "caster", tabs = { 3 }, spirit = 0.25, wand = true,
       w = Caster({ SHADOWDMG = 1, SPELLCRIT = 5, HOLYDMG = 0.1 }) },
@@ -120,14 +125,18 @@ ECA.SPECS = {
       w = Caster({ FIREDMG = 1, SHADOWDMG = 0.3, SPELLCRIT = 10, HEALTH = 0.03, MP5 = 0.5 }) },
   },
   DRUID = {
+    -- OctoWow: Moonkin Form raises the armor from your items by 360%, so armor counts about 4.6 times
+    -- as much as it does for other casters (0.005 -> 0.025).
     { key = "balance", name = "Balance", role = "caster", tabs = { 1 }, spirit = 0.2,
-      w = Caster({ ARCANEDMG = 0.7, NATUREDMG = 0.6, MP5 = 1.2, MANA = 0.025 }) },
+      w = Caster({ ARCANEDMG = 0.7, NATUREDMG = 0.6, MP5 = 1.2, MANA = 0.025, ARMOR = 0.025 }) },
     { key = "cat", name = "Feral (Cat)", role = "melee", tabs = { 2 }, feral = true, agiAP = 1,
       w = Melee({ CRIT = 28, HIT = 24, HASTE = 15, DPS = 0, WEAPONSKILL = 0, MANA = 0.005 }) },
     { key = "bear", name = "Feral (Bear)", role = "tank", tabs = {}, feral = true,
       w = Tank({ ARMOR = 0.3, DEFENSE = 1.2, PARRY = 0, BLOCK = 0, BLOCKVALUE = 0, DPS = 0, WEAPONSKILL = 0 }) },
+    -- OctoWow: in Tree of Life Form nearby party members get healing power equal to 20% of your Spirit,
+    -- so each point of Spirit is also worth 0.2 healing.
     { key = "resto", name = "Restoration", role = "healer", tabs = { 3 }, spirit = 0.35,
-      w = Healer({ SPELLCRIT = 3 }) },
+      w = Healer({ SPELLCRIT = 3, SPI = 0.2 }) },
   },
 }
 

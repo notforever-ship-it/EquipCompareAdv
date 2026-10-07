@@ -118,7 +118,7 @@ Below level 60 the percent stats (crit, hit, dodge and so on) are worth less, be
 
 Melee and hunter scores count in attack power, caster scores in spell damage, healer scores in healing and tank scores in stamina. A score only means something next to another score for the same spec.
 
-**Specs:** Arms, Fury, Protection · Holy, Protection, Retribution · Hunter · Rogue · Holy/Discipline, Shadow · Elemental, Enhancement, Restoration · Arcane, Fire, Frost · Shadow and Fire warlock · Balance, Cat, Bear, Restoration. **Auto** follows your talents: the tree with the most points picks the spec. Feral druids get Cat; pick Bear by hand when you tank.
+**Specs:** Arms, Fury, Protection · Holy, Protection, Retribution · Hunter · Rogue · Discipline (a damage spec on Octo/Turtle), Holy, Shadow · Elemental, Enhancement, Restoration · Arcane, Fire, Frost · Shadow and Fire warlock · Balance, Cat, Bear, Restoration. **Auto** follows your talents: the tree with the most points picks the spec. Feral druids get Cat; pick Bear by hand when you tank.
 
 **Hit caps.** Hit stops helping once you can't miss. The addon adds up the hit on the rest of your gear and the hit talents you've taken (Precision, Surefooted, Nature's Guidance, Elemental Precision, Arcane Focus, Shadow Focus, Suppression), and only counts the part of an item's hit that still does something. Past the cap, hit keeps half its value if you dual wield and none otherwise. Caps are 9% melee and ranged and 16% spell against raid bosses, 5% and 3% against things your own level; **Auto** uses the raid numbers at level 60. Tanks in raid mode also value defense less past 440.
 
@@ -167,6 +167,10 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.5.0**
+
+- Octo/Turtle changes, checked against the [OctoWow database](https://octowow.st/db/). Priest is now Discipline (a damage spec: Chastise, Enlighten) and Holy (healer), where it used to be one "Holy / Discipline" healer. Balance druids value armor more (Moonkin Form raises item armor by 360%), Restoration druids value Spirit more (Tree of Life Form turns 20% of it into party healing), and Protection warriors value block value more (Shield Slam). The other classes' Octo spells fit their existing specs. Talent trees and stat conversions are not in the database and are not checked yet.
 
 **1.4.3**
 
