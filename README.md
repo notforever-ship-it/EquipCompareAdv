@@ -118,7 +118,7 @@ Below level 60 the percent stats (crit, hit, dodge and so on) are worth less, be
 
 Melee and hunter scores count in attack power, caster scores in spell damage, healer scores in healing and tank scores in stamina. A score only means something next to another score for the same spec.
 
-**Specs:** Arms, Fury, Protection · Holy, Protection, Retribution · Hunter · Rogue · Discipline (a damage spec on Octo/Turtle), Holy, Shadow · Elemental, Enhancement, Restoration · Arcane, Fire, Frost · Shadow and Fire warlock · Balance, Cat, Bear, Restoration. **Auto** follows your talents: the tree with the most points picks the spec. Feral druids get Cat; pick Bear by hand when you tank.
+**Specs:** Arms, Fury, Protection · Holy, Protection, Retribution · Hunter, Survival · Rogue · Discipline (a damage spec on Turtle), Holy, Shadow · Elemental, Enhancement, Restoration · Arcane, Fire, Frost · Shadow and Fire warlock · Balance, Cat, Bear, Restoration. **Auto** follows your talents: the tree with the most points picks the spec. Feral druids get Cat; pick Bear by hand when you tank.
 
 **Hit caps.** Hit stops helping once you can't miss. The addon adds up the hit on the rest of your gear and the hit talents you've taken (Precision, Surefooted, Nature's Guidance, Elemental Precision, Arcane Focus, Shadow Focus, Suppression), and only counts the part of an item's hit that still does something. Past the cap, hit keeps half its value if you dual wield and none otherwise. Caps are 9% melee and ranged and 16% spell against raid bosses, 5% and 3% against things your own level; **Auto** uses the raid numbers at level 60. Tanks in raid mode also value defense less past 440.
 
@@ -167,6 +167,10 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.5.1**
+
+- Checked against Turtle WoW's own class-change posts ([Turtle WoW wiki](https://turtle-wow.fandom.com/wiki/Turtle_WoW_Wiki), one page per class), which Octo follows. Survival is now its own melee Hunter spec (Lightning Reflexes turns Agility into melee attack power), Paladins value Spell Power more (the new Crusader Strike, Holy Strike, Holy Shield and Bulwark of the Righteous scale with it) and Holy Paladins value armor a little (Ironclad), and Arcane mages value haste more (reworked around casting speed). Warriors, Rogues, Shamans and Warlocks needed no change. Turtle's posts are now the only source: the Restoration Druid Spirit bonus added in 1.5.0 came only from Octo's database, which Turtle's posts do not list, so it is removed again.
 
 **1.5.0**
 

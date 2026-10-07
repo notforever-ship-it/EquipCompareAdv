@@ -76,17 +76,24 @@ ECA.SPECS = {
     { key = "prot", name = "Protection", role = "tank", tabs = { 3 }, no2H = true, w = Tank({ BLOCKVALUE = 0.8 }) },
   },
   PALADIN = {
+    -- Turtle: Ironclad gives healing power equal to up to 2% of the armor on your items.
     { key = "holy", name = "Holy", role = "healer", tabs = { 1 }, spirit = 0.1,
-      w = Healer({ SPELLCRIT = 12, MANA = 0.04 }) },
+      w = Healer({ SPELLCRIT = 12, MANA = 0.04, ARMOR = 0.02 }) },
+    -- Turtle: Crusader Strike, Holy Strike, Holy Shield and Bulwark of the Righteous all add spell power
+    -- damage (33-43%), so Spell Power is worth more to Protection (0.5 -> 0.7) and Retribution (0.35 -> 0.5).
     { key = "prot", name = "Protection", role = "tank", tabs = { 2 }, no2H = true,
-      w = Tank({ SP = 0.5, MANA = 0.015, BLOCKVALUE = 0.6, MP5 = 1 }) },
+      w = Tank({ SP = 0.7, MANA = 0.015, BLOCKVALUE = 0.6, MP5 = 1 }) },
     { key = "ret", name = "Retribution", role = "melee", tabs = { 3 }, slowMH = true, noShield = true,
-      w = Melee({ CRIT = 27, HIT = 26, HASTE = 18, WEAPONSKILL = 10, SP = 0.35, SPELLCRIT = 2, MANA = 0.01 }) },
+      w = Melee({ CRIT = 27, HIT = 26, HASTE = 18, WEAPONSKILL = 10, SP = 0.5, SPELLCRIT = 2, MANA = 0.01 }) },
   },
   HUNTER = {
-    { key = "hunter", name = "Hunter", role = "ranged", tabs = { 1, 2, 3 },
+    { key = "hunter", name = "Hunter", role = "ranged", tabs = { 1, 2 },
       w = { RAP = 1, AP = 0.05, CRIT = 30, HIT = 30, HASTE = 15, RDPS = 14, DPS = 0.3, MP5 = 1.5, MANA = 0.01,
         HEALTH = 0.02, ARMOR = 0.01, WEAPONSKILL = 2 } },
+    -- Turtle: Survival is a melee hunter (Raptor Strike, Mongoose Bite, Carve) and Lightning Reflexes turns
+    -- up to 100% of your Agility into melee attack power, so Agility counts twice as much attack power.
+    { key = "surv", name = "Survival (melee)", role = "melee", tabs = { 3 }, agiAP = 2,
+      w = Melee({ CRIT = 28, HIT = 26, HASTE = 15, WEAPONSKILL = 8, MP5 = 1.2, MANA = 0.01 }) },
   },
   ROGUE = {
     { key = "rogue", name = "Rogue", role = "melee", tabs = { 1, 2, 3 }, slowMH = true,
@@ -111,8 +118,10 @@ ECA.SPECS = {
       w = Healer({ SPELLCRIT = 5 }) },
   },
   MAGE = {
+    -- Turtle: Arcane was reworked around casting speed (Accelerated Arcana, Arcane Power) and Arcane Rupture /
+    -- Surge / Missiles scale well with spell power, so haste counts a bit more (10 -> 14).
     { key = "arcane", name = "Arcane", role = "caster", tabs = { 1 }, spirit = 0.3, wand = true,
-      w = Caster({ ARCANEDMG = 1, FIREDMG = 0.3, FROSTDMG = 0.3, SPELLCRIT = 9, MANA = 0.03 }) },
+      w = Caster({ ARCANEDMG = 1, FIREDMG = 0.3, FROSTDMG = 0.3, SPELLCRIT = 9, MANA = 0.03, HASTE = 14 }) },
     { key = "fire", name = "Fire", role = "caster", tabs = { 2 }, spirit = 0.2, wand = true,
       w = Caster({ FIREDMG = 1, FROSTDMG = 0.2, ARCANEDMG = 0.2, SPELLCRIT = 11 }) },
     { key = "frost", name = "Frost", role = "caster", tabs = { 3 }, spirit = 0.2, wand = true,
@@ -125,18 +134,16 @@ ECA.SPECS = {
       w = Caster({ FIREDMG = 1, SHADOWDMG = 0.3, SPELLCRIT = 10, HEALTH = 0.03, MP5 = 0.5 }) },
   },
   DRUID = {
-    -- OctoWow: Moonkin Form raises the armor from your items by 360%, so armor counts about 4.6 times
-    -- as much as it does for other casters (0.005 -> 0.025).
+    -- Turtle/Octo: Moonkin Form raises the armor from your items by 180% (from level 30) and 360% (from
+    -- level 40), so armor counts about 4.6 times as much as it does for other casters at 60 (0.005 -> 0.025).
     { key = "balance", name = "Balance", role = "caster", tabs = { 1 }, spirit = 0.2,
       w = Caster({ ARCANEDMG = 0.7, NATUREDMG = 0.6, MP5 = 1.2, MANA = 0.025, ARMOR = 0.025 }) },
     { key = "cat", name = "Feral (Cat)", role = "melee", tabs = { 2 }, feral = true, agiAP = 1,
       w = Melee({ CRIT = 28, HIT = 24, HASTE = 15, DPS = 0, WEAPONSKILL = 0, MANA = 0.005 }) },
     { key = "bear", name = "Feral (Bear)", role = "tank", tabs = {}, feral = true,
       w = Tank({ ARMOR = 0.3, DEFENSE = 1.2, PARRY = 0, BLOCK = 0, BLOCKVALUE = 0, DPS = 0, WEAPONSKILL = 0 }) },
-    -- OctoWow: in Tree of Life Form nearby party members get healing power equal to 20% of your Spirit,
-    -- so each point of Spirit is also worth 0.2 healing.
     { key = "resto", name = "Restoration", role = "healer", tabs = { 3 }, spirit = 0.35,
-      w = Healer({ SPELLCRIT = 3, SPI = 0.2 }) },
+      w = Healer({ SPELLCRIT = 3 }) },
   },
 }
 
