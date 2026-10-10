@@ -142,25 +142,34 @@ local function ListWeights()
 end
 
 local function Help()
-  ECA.Print("v" .. ECA.VERSION .. ". Hover any item you could equip to compare it with what you're wearing.")
-  local lines = {
-    "/eca" .. GREY .. "  open the options window" .. END,
-    "/eca on | off" .. GREY .. "  switch the comparison on or off" .. END,
-    "/eca spec auto | <name>" .. GREY .. "  what to score for (auto follows your talents)" .. END,
-    "/eca detail 1 | 2 | 3" .. GREY .. "  compact, normal or detailed (hold Alt for detailed any time)" .. END,
-    "/eca equipped" .. GREY .. "  show or hide the tooltip of the item you have equipped" .. END,
-    "/eca shift" .. GREY .. "  only show while Shift is held" .. END,
-    "/eca caps auto | raid | leveling | off" .. GREY .. "  how hit caps are judged" .. END,
-    "/eca roles" .. GREY .. "  show or hide the verdict for each role your class can fill" .. END,
-    "/eca leveling" .. GREY .. "  below 60, healers and tanks also count damage stats (on by default)" .. END,
-    "/eca enchants" .. GREY .. "  count or ignore enchants" .. END,
-    "/eca dark" .. GREY .. "  dark background behind the panels, or the game's own tooltip look" .. END,
-    "/eca gear" .. GREY .. "  list what you have equipped, with scores" .. END,
-    "/eca weights" .. GREY .. "  list the stat weights;  " .. END .. "/eca weight <STAT> <n>" .. GREY .. "  change one;  " .. END .. "/eca weight reset",
-    "/eca hit <n>" .. GREY .. " and " .. END .. "/eca spellhit <n>" .. GREY .. "  extra hit % from buffs or talents the addon can't see" .. END,
-    "/eca scorey <pixels>" .. GREY .. "  raise the gear score line on the character window;  " .. END .. "/eca scorey auto" .. GREY .. "  sit under ShaguScore" .. END,
-  }
-  for i = 1, table.getn(lines) do DEFAULT_CHAT_FRAME:AddMessage("  " .. GOLD .. lines[i]) end
+  ECA.Print("v" .. ECA.VERSION)
+  local function Head(t) DEFAULT_CHAT_FRAME:AddMessage(GOLD .. t .. END) end
+  local function Line(cmd, what) DEFAULT_CHAT_FRAME:AddMessage("  " .. WHITE .. cmd .. END .. GREY .. "  " .. what .. END) end
+  Head("Start")
+  DEFAULT_CHAT_FRAME:AddMessage("  - Hover an item to compare it with what you wear.")
+  DEFAULT_CHAT_FRAME:AddMessage("  - Hold Alt for the detailed view.")
+  Head("Commands")
+  Line("/eca", "options window")
+  Line("/eca on | off", "comparison on or off")
+  Line("/eca spec auto | <name>", "what to score for (auto = your talents)")
+  Line("/eca detail 1 | 2 | 3", "compact, normal or detailed")
+  Line("/eca equipped", "equipped tooltip on or off")
+  Line("/eca shift", "only show while Shift is held")
+  Line("/eca caps auto | raid | leveling | off", "how hit caps are judged")
+  Line("/eca roles", "role verdicts on or off")
+  Line("/eca leveling", "below 60, healers and tanks count damage too")
+  Line("/eca enchants", "count or ignore enchants")
+  Line("/eca dark", "dark background or the game's look")
+  Line("/eca gear", "list your gear with scores")
+  Line("/eca weights", "list the stat weights")
+  Line("/eca weight <STAT> <n>", "change one weight")
+  Line("/eca weight reset", "weights back to defaults")
+  Line("/eca hit <n>", "extra melee and ranged hit % the addon can't see")
+  Line("/eca spellhit <n>", "extra spell hit % the addon can't see")
+  Line("/eca scorey <pixels>", "raise the gear score line")
+  Line("/eca scorey auto", "gear score line under ShaguScore")
+  Line("/eca version", "show the version")
+  Line("/eca debug", "info for a bug report")
 end
 
 local function Slash(msg)

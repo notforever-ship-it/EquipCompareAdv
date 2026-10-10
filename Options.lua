@@ -14,25 +14,25 @@ local NUM_ROWS, ROW_HEIGHT = 12, 24
 
 local CHECKS = {
   { key = "enabled", label = "Compare items when I hover them",
-    tip = "The panel next to item tooltips. Turn it off to keep the addon quiet without disabling it." },
+    tip = "- The panel next to item tooltips.\n- Off: the addon stays quiet." },
   { key = "showEquipped", label = "Show the tooltip of what I have equipped",
-    tip = "The equipped item's own tooltip sits between the item you hover and the comparison panel, like the game's compare tooltips. Rings, trinkets and weapons can show two." },
+    tip = "- Sits between the hovered item and the panel.\n- Rings, trinkets and weapons can show two." },
   { key = "shiftOnly", label = "Only while I hold Shift",
-    tip = "Keeps tooltips clean until you ask for the comparison by holding Shift." },
+    tip = "- Hold Shift to see the comparison.\n- Keeps tooltips clean the rest of the time." },
   { key = "showPoints", label = "Show score points next to each stat",
-    tip = "How much each gained or lost stat moves the score, so you can see why the verdict came out that way." },
+    tip = "- How much each stat moves the score.\n- Shows why the verdict came out that way." },
   { key = "showFit", label = "Show who the item is made for",
-    tip = "Tank, DPS or healer, the classes and specs that get the most out of the item's stats, and how well it fits your own spec." },
+    tip = "- Tank, DPS or healer.\n- The classes and specs it suits best.\n- How well it fits your spec." },
   { key = "showRoles", label = "Show a verdict for each role (tank, healer, damage)",
-    tip = "Under the main verdict, the same swap judged purely for tanking, for healing and for damage, whichever of those your class can do. Handy when you tank in one set and quest in another, or your talents don't match how you play." },
+    tip = "- The same swap judged only for tanking, healing or damage.\n- Only the roles your class can do.\n- Handy if you tank in one set and quest in another." },
   { key = "showCharScore", label = "Show my gear score on the character window",
-    tip = "The total score of everything you're wearing, under your character model." },
+    tip = "- Total score of what you wear.\n- Shown under your character." },
   { key = "levelingMix", label = "While leveling, healers and tanks count damage too",
-    tip = "A level 11 healer still has to kill things. Below level 60, healing and tanking specs get their class's damage spec mixed into the score: nearly all of it at level 10, fading to none at 60. The panel header shows '+ leveling' while it applies." },
+    tip = "- Below 60, healers and tanks also count damage stats.\n- Nearly all at level 10, none at 60.\n- The panel header shows '+ leveling'." },
   { key = "ignoreEnchants", label = "Ignore enchants (compare bare items)",
-    tip = "Off: you see what really changes the moment you swap, including the enchant you'd lose.\n\nOn: both items are judged without enchants, which is fairer when you plan to enchant the new one too." },
+    tip = "- Off: counts the enchant you would lose.\n- On: compares items without enchants.\n- On is fairer if you will enchant the new one." },
   { key = "darkBackground", label = "Dark background behind the panels",
-    tip = "A dark layer behind the comparison panel and the equipped-item tooltips, so small text reads over busy backgrounds.\n\nOff gives the game's own see-through tooltip look." },
+    tip = "- Easier to read over busy backgrounds.\n- Off: the game's own see-through look." },
 }
 
 -- The 1.12 dialog background art is partly see-through; a solid layer underneath keeps text readable.
@@ -183,9 +183,8 @@ local function BuildWeights()
   intro:SetPoint("TOPLEFT", f, "TOPLEFT", 24, -58)
   intro:SetWidth(332)
   intro:SetJustifyH("LEFT")
-  intro:SetText("Score points for 1 of each stat. Type a number and press Enter. Strength, Agility, Stamina, " ..
-    "Intellect and Spirit are worth what they turn into for your class (shown on the right); a number " ..
-    "typed there is added on top.")
+  intro:SetText("- Score points for 1 of each stat. Type, press Enter.\n" ..
+    "- Strength, Agility and co: their worth is on the right.\n- A number typed for them adds on top.")
 
   weightsScroll = CreateFrame("ScrollFrame", "EquipCompareAdvWeightsScroll", f, "FauxScrollFrameTemplate")
   weightsScroll:SetPoint("TOPLEFT", f, "TOPLEFT", 20, -112)
@@ -237,8 +236,8 @@ local function BuildWeights()
   hitBox:SetScript("OnEnterPressed", function() this:ClearFocus() end)
   hitBox:SetScript("OnEscapePressed", function() this:ClearFocus() end)
   hitBox:SetScript("OnEditFocusLost", function() CommitHit(this, "extraHit") end)
-  Explain(hitBox, "Extra melee and ranged hit", "Hit % from buffs, racials or talents the addon can't see. " ..
-    "It counts towards the hit cap, so hit on gear is worth less once you're close to it.")
+  Explain(hitBox, "Extra melee and ranged hit", "- Hit % from buffs, racials or talents the addon can't see.\n" ..
+    "- Counts towards the hit cap.")
 
   local spellLabel = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   spellLabel:SetPoint("LEFT", hitBox, "RIGHT", 10, 0)
@@ -252,7 +251,7 @@ local function BuildWeights()
   spellHitBox:SetScript("OnEnterPressed", function() this:ClearFocus() end)
   spellHitBox:SetScript("OnEscapePressed", function() this:ClearFocus() end)
   spellHitBox:SetScript("OnEditFocusLost", function() CommitHit(this, "extraSpellHit") end)
-  Explain(spellHitBox, "Extra spell hit", "Spell hit % from buffs or talents the addon can't see.")
+  Explain(spellHitBox, "Extra spell hit", "- Spell hit % from buffs or talents the addon can't see.")
 
   talentText = f:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
   talentText:SetPoint("TOPLEFT", f, "TOPLEFT", 26, y - 28)
@@ -265,7 +264,7 @@ local function BuildWeights()
     for i = 1, NUM_ROWS do weightRows[i].box.statKey = nil end   -- nothing half-typed gets saved
     ECA.ResetWeights()
   end)
-  Explain(reset, "Back to defaults", "Forget every change you made to this spec's weights.")
+  Explain(reset, "Back to defaults", "- Undo your changes to this spec's weights.")
 
   local done = Button("EquipCompareAdvWeightsDone", f, 80, "Done")
   done:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -20, 20)
@@ -315,7 +314,7 @@ local function Build()
       ECA.SettingsChanged()
     end)
     if entries[i].key == "auto" then
-      Explain(b, "Auto", "Follows your talents: the tree with the most points decides the spec.")
+      Explain(b, "Auto", "- Follows your talents.\n- The tree with the most points wins.")
     end
     specButtons[i] = b
   end
@@ -348,9 +347,9 @@ local function Build()
     if ECA.db.detail > 3 then ECA.db.detail = 1 end
     ECA.SettingsChanged()
   end)
-  Explain(detailButton, "How much the panel shows", "Compact: scores and the verdict.\nNormal: every stat gained " ..
-    "and lost, warnings, and who the item is made for.\nDetailed: also before and after numbers, what the " ..
-    "change does in practice, and where you stand on hit caps.\n\nHolding Alt shows Detailed at any time.")
+  Explain(detailButton, "How much the panel shows", "- Compact: scores and verdict.\n" ..
+    "- Normal: plus every stat, warnings, who it is made for.\n" ..
+    "- Detailed: plus before and after, what it does, hit caps.\n- Hold Alt for Detailed any time.")
 
   capsButton = Button("EquipCompareAdvCaps", frame, 164, "")
   capsButton:SetPoint("LEFT", detailButton, "RIGHT", 12, 0)
@@ -358,20 +357,19 @@ local function Build()
     ECA.db.capMode = NextIn(ECA.CAP_MODES, ECA.db.capMode)
     ECA.SettingsChanged()
   end)
-  Explain(capsButton, "Hit caps", "Hit on gear stops helping once you can't miss.\n\nRaid bosses: 9% melee and " ..
-    "ranged, 16% spell.\nDungeons and leveling: 5% and 3%.\nAuto picks raid at level 60.\n\nHit from your " ..
-    "talents is counted for you. Tanks in raid mode also stop valuing defense as much past 440.")
+  Explain(capsButton, "Hit caps", "- Hit stops helping once you can't miss.\n" ..
+    "- Raid bosses: 9% melee and ranged, 16% spell.\n- Dungeons and leveling: 5% and 3%.\n" ..
+    "- Auto: raid at level 60.\n- Hit from talents is counted for you.\n- Raid tanks: defense counts less past 440.")
 
   local weightsButton = Button("EquipCompareAdvWeightsButton", frame, 110, "Stat weights")
   weightsButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 20, 40)
   weightsButton:SetScript("OnClick", function() ECA.ToggleWeights() end)
-  Explain(weightsButton, "Stat weights", "See and change what every stat is worth to your spec, and tell the " ..
-    "addon about hit you get from elsewhere.")
+  Explain(weightsButton, "Stat weights", "- See and change what each stat is worth.\n- Add hit you get from elsewhere.")
 
   local gearButton = Button("EquipCompareAdvGearButton", frame, 110, "List my gear")
   gearButton:SetPoint("LEFT", weightsButton, "RIGHT", 8, 0)
   gearButton:SetScript("OnClick", function() ECA.PrintGear() end)
-  Explain(gearButton, "List my gear", "Prints everything you have equipped to chat, with each item's score.")
+  Explain(gearButton, "List my gear", "- Your gear and its scores, in chat.")
 
   local done = Button("EquipCompareAdvDone", frame, 80, "Done")
   done:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -20, 40)
