@@ -27,7 +27,7 @@ const KNOWN_GLOBALS = new Set((
   "PlaySound GetCursorPosition IsShiftKeyDown IsControlKeyDown IsAltKeyDown " +
   "STANDARD_TEXT_FONT GameFontNormal GameFontNormalSmall GameFontNormalLarge GameFontHighlight GameFontHighlightSmall " +
   // Units, pets, world
-  "UnitExists UnitName UnitLevel UnitCreatureFamily UnitCreatureType UnitIsUnit UnitClass UnitIsPlayer " +
+  "UnitExists UnitName UnitRace UnitLevel UnitCreatureFamily UnitCreatureType UnitIsUnit UnitClass UnitIsPlayer " +
   "UnitPlayerControlled UnitIsDead UnitClassification HasPetUI GetStablePetInfo GetPetLoyalty " +
   "GetRealmName GetZoneText GetRealZoneText GetTime UnitAffectingCombat " +
   // SuperWoW
@@ -42,7 +42,7 @@ const KNOWN_GLOBALS = new Set((
   "GetInventoryItemLink GetInventoryItemTexture UnitIsDeadOrGhost UnitOnTaxi GetPetExperience IsTradeskillTrainer UnitRangedDamage GetSpellCooldown GetSpellTexture UnitMana " +
   "SUPERWOW_VERSION " +
   // Equip Compare Adv: talents, the character window, chat link tooltips
-  "GetNumTalentTabs GetNumTalents GetTalentInfo GetTalentTabInfo CharacterModelFrame ItemRefTooltip ShoppingTooltip1 ShoppingTooltip2 GetDodgeChance GetParryChance"
+  "GetNumTalentTabs GetNumTalents GetTalentInfo GetTalentTabInfo CharacterModelFrame CharacterFrame PaperDollFrame ItemRefTooltip ShoppingTooltip1 ShoppingTooltip2 GetDodgeChance GetParryChance"
 ).split(/\s+/).filter(Boolean));
 
 // Member calls that don't exist in Lua 5.0 / the 1.12 client.

@@ -168,6 +168,10 @@ The addon looks at how an item's stat budget is spent and checks it against ever
 
 ## Changes
 
+**1.5.2**
+
+- The gear score line on the character window now sits right under ShaguScore when you use it (it was far below, on top of the stats when BetterCharacterStats is also loaded). `/eca scorey <pixels>` raises it by hand, `/eca scorey auto` goes back to sitting under ShaguScore.
+
 **1.5.1**
 
 - Checked against Turtle WoW's own class-change posts ([Turtle WoW wiki](https://turtle-wow.fandom.com/wiki/Turtle_WoW_Wiki), one page per class), which Octo follows. Survival is now its own melee Hunter spec (Lightning Reflexes turns Agility into melee attack power), Paladins value Spell Power more (the new Crusader Strike, Holy Strike, Holy Shield and Bulwark of the Righteous scale with it) and Holy Paladins value armor a little (Ironclad), and Arcane mages value haste more (reworked around casting speed). Warriors, Rogues, Shamans and Warlocks needed no change. Turtle's posts are now the only source: the Restoration Druid Spirit bonus added in 1.5.0 came only from Octo's database, which Turtle's posts do not list, so it is removed again.

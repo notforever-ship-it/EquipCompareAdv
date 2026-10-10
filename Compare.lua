@@ -524,15 +524,56 @@ function ECA.PrintGear()
   for i = 1, table.getn(caps) do DEFAULT_CHAT_FRAME:AddMessage("  |cff9d9d9d" .. caps[i] .. "|r") end
 end
 
-local charText
+local charText, charHolder
+
+-- Another addon's score line on the character window (ShaguScore), found by its text, so the gear score can sit
+-- right under it instead of far below it on top of the stats.
+local function FindOtherScore()
+  local parents = { CharacterModelFrame, PaperDollFrame, CharacterFrame }
+  for p = 1, 3 do
+    local parent = parents[p]
+    if parent and parent.GetRegions then
+      local frames = { parent }
+      local kids = { parent:GetChildren() }
+      for i = 1, table.getn(kids) do table.insert(frames, kids[i]) end
+      for f = 1, table.getn(frames) do
+        local regions = { frames[f]:GetRegions() }
+        for r = 1, table.getn(regions) do
+          local region = regions[r]
+          if region ~= charText and region.GetObjectType and region:GetObjectType() == "FontString" then
+            local text = region:GetText()
+            if text and string.find(text, "ShaguScore", 1, true) then return region end
+          end
+        end
+      end
+    end
+  end
+  return nil
+end
+
+-- Under ShaguScore when it is there; otherwise at the bottom of the model. /eca scorey <pixels> picks a height
+-- by hand (the distance up from the bottom of the model), /eca scorey auto goes back to this.
+local function PlaceCharText()
+  charText:ClearAllPoints()
+  local other = nil
+  if ECA.db.charScoreUp == nil then
+    local ok, found = pcall(FindOtherScore)
+    if ok then other = found end
+  end
+  if other then
+    charText:SetPoint("TOP", other, "BOTTOM", 0, -2)
+  else
+    charText:SetPoint("BOTTOM", charHolder, "BOTTOM", 0, ECA.db.charScoreUp or 6)
+  end
+end
 
 function ECA.SetupCharText()
   if charText or not CharacterModelFrame then return end
-  local holder = CreateFrame("Frame", nil, CharacterModelFrame)
-  holder:SetAllPoints(CharacterModelFrame)
-  charText = holder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-  charText:SetPoint("BOTTOM", holder, "BOTTOM", 0, 6)
-  holder:SetScript("OnShow", function() ECA.UpdateCharText() end)
+  charHolder = CreateFrame("Frame", nil, CharacterModelFrame)
+  charHolder:SetAllPoints(CharacterModelFrame)
+  charText = charHolder:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+  charText:SetPoint("BOTTOM", charHolder, "BOTTOM", 0, 6)
+  charHolder:SetScript("OnShow", function() ECA.UpdateCharText() end)
 end
 
 function ECA.UpdateCharText()
@@ -544,6 +585,7 @@ function ECA.UpdateCharText()
   if not CharacterModelFrame:IsVisible() then return end
   local ok = ECA.Safe(function()
     charText:SetText("Gear score " .. ECA.Num(ECA.TotalScore()) .. "  |cff9d9d9d" .. ECA.SpecShort() .. "|r")
+    PlaceCharText()
   end)
   if not ok then charText:SetText("") end
 end

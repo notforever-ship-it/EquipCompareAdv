@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.5.1"
+ECA.VERSION = "1.5.2"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -158,6 +158,7 @@ local function Help()
     "/eca gear" .. GREY .. "  list what you have equipped, with scores" .. END,
     "/eca weights" .. GREY .. "  list the stat weights;  " .. END .. "/eca weight <STAT> <n>" .. GREY .. "  change one;  " .. END .. "/eca weight reset",
     "/eca hit <n>" .. GREY .. " and " .. END .. "/eca spellhit <n>" .. GREY .. "  extra hit % from buffs or talents the addon can't see" .. END,
+    "/eca scorey <pixels>" .. GREY .. "  raise the gear score line on the character window;  " .. END .. "/eca scorey auto" .. GREY .. "  sit under ShaguScore" .. END,
   }
   for i = 1, table.getn(lines) do DEFAULT_CHAT_FRAME:AddMessage("  " .. GOLD .. lines[i]) end
 end
@@ -234,6 +235,16 @@ local function Slash(msg)
       ECA.SettingsChanged()
       ECA.Print("Extra " .. (cmd == "hit" and "melee and ranged" or "spell") .. " hit set to " .. n .. "%.")
     end
+  elseif cmd == "scorey" then
+    local n = tonumber(rest)
+    if n then
+      ECA.db.charScoreUp = n
+      ECA.Print("The gear score on the character window is " .. n .. " pixels up from the bottom of the model.")
+    else
+      ECA.db.charScoreUp = nil
+      ECA.Print("The gear score on the character window sits under ShaguScore if you have it, otherwise at the bottom.")
+    end
+    if ECA.UpdateCharText then ECA.UpdateCharText() end
   elseif cmd == "version" then
     ECA.Print("v" .. ECA.VERSION)
   elseif cmd == "debug" then
