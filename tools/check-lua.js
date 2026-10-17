@@ -42,7 +42,10 @@ const KNOWN_GLOBALS = new Set((
   "GetInventoryItemLink GetInventoryItemTexture UnitIsDeadOrGhost UnitOnTaxi GetPetExperience IsTradeskillTrainer UnitRangedDamage GetSpellCooldown GetSpellTexture UnitMana " +
   "SUPERWOW_VERSION " +
   // Equip Compare Adv: talents, the character window, chat link tooltips
-  "GetNumTalentTabs GetNumTalents GetTalentInfo GetTalentTabInfo CharacterModelFrame CharacterFrame PaperDollFrame ItemRefTooltip ShoppingTooltip1 ShoppingTooltip2 GetDodgeChance GetParryChance"
+  "GetNumTalentTabs GetNumTalents GetTalentInfo GetTalentTabInfo CharacterModelFrame CharacterFrame PaperDollFrame ItemRefTooltip ShoppingTooltip1 ShoppingTooltip2 GetDodgeChance GetParryChance " +
+  // Equip Compare Adv: upgrade arrows (vendors, buyback, auction house, bank, Bagshui and pfUI bags)
+  "MerchantFrame MERCHANT_ITEMS_PER_PAGE BUYBACK_ITEMS_PER_PAGE GetMerchantItemLink GetBuybackItemLink " +
+  "GetAuctionItemLink BrowseScrollFrame NUM_BROWSE_TO_DISPLAY BankButtonIDToInvSlotID Bagshui pfUI"
 ).split(/\s+/).filter(Boolean));
 
 // Member calls that don't exist in Lua 5.0 / the 1.12 client.

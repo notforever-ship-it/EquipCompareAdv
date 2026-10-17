@@ -10,6 +10,7 @@ Gear comparison for Turtle WoW, Octo WoW, Ravencraft and other 1.12.1 servers.
 - Gives a verdict, from big upgrade to big downgrade.
 - Gives a verdict for each role your class can fill (tank, healer, damage).
 - Says who the item is made for, and how well it fits your spec.
+- Puts a green up or red down arrow on item icons: in your bags, at vendors and in the auction house.
 - Warns about what a score can't see: set bonuses, Use and proc effects, items you can't equip yet.
 - Never changes the game's own tooltips, so it works with other tooltip addons.
 
@@ -121,6 +122,20 @@ Worked out from your character as it is right now.
 
 - Hold **Alt** for Detailed any time.
 
+## Upgrade arrows
+
+- **Green up arrow**: an upgrade for your spec.
+- **Red down arrow**: worse than what you wear.
+- **No arrow**: about equal, not gear, or you can't use it.
+- Sits in the bottom-left corner of the icon.
+- "About equal" = less than 0.5 score, or less than 3% of the slot (the same as SIDEGRADE on the panel).
+- Rings, trinkets and one-handers: judged against your weaker slot.
+- Never on items you can't use: wrong armor or weapon type, level too high, wrong class.
+- Where: the game's own bags, Bagshui, pfUI bags, the bank (while open), vendors (also buyback), the auction house browse list.
+- Worked out once per item. Again only when your gear, spec, talents, level or settings change.
+- `/eca best` or the **Best in my bags** button: the best upgrade you carry for each slot.
+- `/eca off` hides the arrows too.
+
 ## How the score works
 
 - Each spec has weights for the stats that matter: attack power, crit, hit, spell damage, healing, health, armor and so on.
@@ -187,13 +202,14 @@ Worked out from your character as it is right now.
 `/eca` opens the window:
 
 - **Score items for**: Auto, or any spec of your class.
-- Switches: comparison, equipped tooltip, Shift only, score points, "made for", role verdicts, gear score, leveling mix, ignore enchants, dark background.
+- Switches: comparison, equipped tooltip, Shift only, score points, "made for", role verdicts, gear score, leveling mix, ignore enchants, dark background, upgrade arrows, show worse items too.
 - **Detail** and **Hit caps** buttons.
 - **Stat weights**: what each stat is worth to your spec.
   - Type a number, press Enter. Changed stats turn gold.
   - Primary stats show their worth on the right. A typed number adds on top.
   - Saved per character and per spec.
   - Also: extra hit you get from elsewhere.
+- **Best in my bags**: the best upgrade you carry for each slot, in chat.
 - **List my gear**: your gear with scores, in chat.
 
 ## Commands
@@ -211,6 +227,9 @@ Worked out from your character as it is right now.
 | `/eca leveling` | Leveling mix for healers and tanks on or off |
 | `/eca enchants` | Count or ignore enchants |
 | `/eca dark` | Dark background or the game's tooltip look |
+| `/eca arrows` | Upgrade arrows on item icons on or off |
+| `/eca worse` | Red arrow on worse items on or off |
+| `/eca best` | Best upgrade in your bags for each slot |
 | `/eca gear` | List your gear with scores |
 | `/eca weights` | List the stat weights |
 | `/eca weight CRIT 30` | Change one weight |
@@ -223,6 +242,15 @@ Worked out from your character as it is right now.
 | `/eca help` | List the commands in game |
 
 ## Changes
+
+**1.6.0**
+
+- Upgrade arrows on item icons: green up = upgrade, red down = worse, none = about equal or not usable.
+- Works in the game's own bags, Bagshui, pfUI bags, the bank, vendors (and buyback) and the auction house.
+- New options: **Upgrade arrows on item icons** and **Show worse items too**. Both on.
+- New `/eca best` and **Best in my bags** button: your best carried upgrade for each slot.
+- New commands `/eca arrows` and `/eca worse`.
+- Adds a new file: close the game completely and start it again after updating.
 
 **1.5.2**
 
@@ -310,7 +338,7 @@ Open an [issue](https://github.com/notforever-ship-it/EquipCompareAdv/issues) wi
 - Addon files sit at the repo root (launcher layout). `tools/` is not in release zips.
 - `node tools/check-lua.js .` checks every file as **Lua 5.0** for the 1.12 client.
 - `node tools/install.js [path to Interface\AddOns]` copies the addon into a game folder.
-- `Stats.lua` reads tooltips, `Profiles.lua` holds weights and "made for", `Compare.lua` scores, `Panel.lua` draws.
+- `Stats.lua` reads tooltips, `Profiles.lua` holds weights and "made for", `Compare.lua` scores, `Panel.lua` draws, `Arrows.lua` puts the upgrade arrows on item icons.
 
 ## Credits
 

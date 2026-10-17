@@ -565,6 +565,7 @@ local function CanUse(class, item)
   if item.kind == "OFFHAND" and not DUAL_WIELD[class] then return false end
   return true
 end
+ECA.CanUse = CanUse   -- the upgrade arrows skip items your class can never wear
 
 -- Units and the "best case" value per budget point for any class and spec, at the player's level.
 local function FitProfile(class, spec)

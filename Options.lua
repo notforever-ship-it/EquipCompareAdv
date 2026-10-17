@@ -3,7 +3,7 @@
 local ECA = EquipCompareAdv
 
 local GOLD, GREY, WHITE, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|r"
-local WIDTH, HEIGHT = 380, 578
+local WIDTH, HEIGHT = 380, 660
 
 local frame, scoringText, scoreText, detailButton, capsButton
 local specButtons, checks = {}, {}
@@ -33,6 +33,11 @@ local CHECKS = {
     tip = "- Off: counts the enchant you would lose.\n- On: compares items without enchants.\n- On is fairer if you will enchant the new one." },
   { key = "darkBackground", label = "Dark background behind the panels",
     tip = "- Easier to read over busy backgrounds.\n- Off: the game's own see-through look." },
+  { key = "upgradeArrows", label = "Upgrade arrows on item icons",
+    tip = "- Green up arrow: an upgrade for your spec.\n- In your bags, at vendors and in the auction house.\n" ..
+      "- Bottom-left corner of the icon.\n- No arrow: about equal, or you can't use it." },
+  { key = "arrowsShowWorse", label = "Show worse items too (red down arrow)",
+    tip = "- Red down arrow: worse than what you wear.\n- Off: only upgrades get an arrow." },
 }
 
 -- The 1.12 dialog background art is partly see-through; a solid layer underneath keeps text readable.
@@ -360,6 +365,12 @@ local function Build()
   Explain(capsButton, "Hit caps", "- Hit stops helping once you can't miss.\n" ..
     "- Raid bosses: 9% melee and ranged, 16% spell.\n- Dungeons and leveling: 5% and 3%.\n" ..
     "- Auto: raid at level 60.\n- Hit from talents is counted for you.\n- Raid tanks: defense counts less past 440.")
+
+  local bestButton = Button("EquipCompareAdvBestButton", frame, 164, "Best in my bags")
+  bestButton:SetPoint("TOPLEFT", detailButton, "BOTTOMLEFT", 0, -8)
+  bestButton:SetScript("OnClick", function() ECA.Safe(ECA.PrintBest) end)
+  Explain(bestButton, "Best in my bags", "- The best upgrade you carry for each slot, in chat.\n" ..
+    "- Shows how much it adds to the score.")
 
   local weightsButton = Button("EquipCompareAdvWeightsButton", frame, 110, "Stat weights")
   weightsButton:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 20, 40)

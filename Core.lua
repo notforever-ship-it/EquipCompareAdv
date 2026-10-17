@@ -3,7 +3,7 @@
 
 EquipCompareAdv = {}
 local ECA = EquipCompareAdv
-ECA.VERSION = "1.5.2"
+ECA.VERSION = "1.6.0"
 
 local GOLD, GREY, WHITE, RED, END = "|cffffd100", "|cff9d9d9d", "|cffffffff", "|cffff4040", "|r"
 
@@ -20,6 +20,8 @@ local DEFAULTS = {
   levelingMix = true,      -- below 60, healers and tanks also count their class's damage stats
   capMode = "auto",        -- hit caps: auto / raid / leveling / off
   darkBackground = true,   -- a dark layer behind the panels; off gives the game's own tooltip look
+  upgradeArrows = true,    -- green up / red down arrows on item icons in bags, at vendors and the auction house
+  arrowsShowWorse = true,  -- also the red down arrow on items that are worse than what you wear
 }
 
 ECA.DETAIL_NAMES = { "Compact", "Normal", "Detailed" }
@@ -81,6 +83,7 @@ function ECA.SettingsChanged()
   if ECA.RefreshPanels then ECA.RefreshPanels() end
   if ECA.UpdateCharText then ECA.UpdateCharText() end
   if ECA.RefreshOptions then ECA.RefreshOptions() end
+  if ECA.RefreshArrows then ECA.RefreshArrows() end
 end
 
 local function SetSpec(arg)
@@ -160,6 +163,9 @@ local function Help()
   Line("/eca leveling", "below 60, healers and tanks count damage too")
   Line("/eca enchants", "count or ignore enchants")
   Line("/eca dark", "dark background or the game's look")
+  Line("/eca arrows", "upgrade arrows on item icons on or off")
+  Line("/eca worse", "red arrow on worse items on or off")
+  Line("/eca best", "best upgrade in your bags for each slot")
   Line("/eca gear", "list your gear with scores")
   Line("/eca weights", "list the stat weights")
   Line("/eca weight <STAT> <n>", "change one weight")
@@ -229,6 +235,16 @@ local function Slash(msg)
     ECA.db.darkBackground = not ECA.db.darkBackground
     ECA.SettingsChanged()
     ECA.Print(ECA.db.darkBackground and "Dark background behind the panels." or "The game's own tooltip look.")
+  elseif cmd == "arrows" then
+    ECA.db.upgradeArrows = not ECA.db.upgradeArrows
+    ECA.SettingsChanged()
+    ECA.Print(ECA.db.upgradeArrows and "Upgrade arrows are shown on item icons." or "Upgrade arrows are hidden.")
+  elseif cmd == "worse" then
+    ECA.db.arrowsShowWorse = not ECA.db.arrowsShowWorse
+    ECA.SettingsChanged()
+    ECA.Print(ECA.db.arrowsShowWorse and "Worse items get a red down arrow." or "Only upgrades get an arrow.")
+  elseif cmd == "best" then
+    ECA.Safe(ECA.PrintBest)
   elseif cmd == "gear" then
     ECA.PrintGear()
   elseif cmd == "weights" then

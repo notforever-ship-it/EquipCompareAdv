@@ -141,6 +141,7 @@ local VERDICTS = {
   slightdown = { text = "SLIGHT DOWNGRADE", advice = "Not recommended: a little lost and nothing gained.", r = 1, g = 0.65, b = 0.3 },
   none = { text = "NOTHING FOR YOUR SPEC", advice = "None of these stats count for the spec being scored. Go by the Overall lines, or score for another spec in /eca.", r = 0.8, g = 0.8, b = 0.8 },
 }
+ECA.VERDICTS = VERDICTS   -- the upgrade arrows read these
 
 -- 'trade' says whether anything is being given up: 1 = every changed stat goes up, -1 = every one goes
 -- down, nil = some of each. An item that only adds is never "about equal", however small the gain.
